@@ -1,13 +1,14 @@
-[gd_scene load_steps=2 format=3 uid="uid://dw24l3f7obvym"]
+[gd_scene format=3 uid="uid://dw24l3f7obvym"]
 
-[ext_resource type="Script" path="res://addons/wfc_editor/wfc_editor_left.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bv43mkpsbgknc" path="res://addons/wfc_editor/wfc_editor_left.gd" id="1_script"]
 
-[node name="LeftColumn" type="VBoxContainer"]
-script = ExtResource("1_script")
+[node name="LeftColumn" type="VBoxContainer" unique_id=226659837]
 size_flags_vertical = 3
 theme_override_constants/separation = 4
+script = ExtResource("1_script")
 
 [node name="Title" type="Label" parent="." unique_id=712175501]
+visible = false
 layout_mode = 2
 text = "图块列表 (点选主图块)"
 

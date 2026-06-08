@@ -1,13 +1,14 @@
-[gd_scene load_steps=2 format=3 uid="uid://b7cujk0x43ky"]
+[gd_scene format=3 uid="uid://b7cujk0x43ky"]
 
-[ext_resource type="Script" path="res://addons/wfc_editor/wfc_editor_right.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://b2vhawyym313t" path="res://addons/wfc_editor/wfc_editor_right.gd" id="1_script"]
 
-[node name="RightColumn" type="VBoxContainer"]
-script = ExtResource("1_script")
+[node name="RightColumn" type="VBoxContainer" unique_id=1930727417]
 size_flags_vertical = 3
 theme_override_constants/separation = 4
+script = ExtResource("1_script")
 
 [node name="Title" type="Label" parent="." unique_id=1980147059]
+visible = false
 layout_mode = 2
 text = "候选图块 (点选后配置连接)"
 

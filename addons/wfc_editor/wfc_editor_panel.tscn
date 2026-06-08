@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cj43w8ju3lbhf" path="res://addons/wfc_editor/wfc_editor_panel.gd" id="1_script"]
 
 [node name="WFCEditorPanel" type="Control" unique_id=1783621458]
+custom_minimum_size = Vector2(900, 600)
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -31,8 +32,7 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "加载图块配置"
 
-[node name="EditorScreen" type="Control" parent="." unique_id=478014124]
-visible = false
+[node name="EditorScreen" type="VBoxContainer" parent="." unique_id=102411709]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -41,10 +41,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="TopBar" type="HBoxContainer" parent="EditorScreen" unique_id=2108622657]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 36.0
+layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="BackButton" type="Button" parent="EditorScreen/TopBar" unique_id=1390562617]
@@ -62,9 +59,6 @@ layout_mode = 2
 text = "保存配置"
 
 [node name="HSplit" type="HSplitContainer" parent="EditorScreen" unique_id=1650261536]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
+size_flags_vertical = 3
+split_offsets = PackedInt32Array(0, 0)
