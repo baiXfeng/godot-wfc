@@ -58,6 +58,9 @@ func _build_tile_set() -> void:
 	atlas_source.texture_region_size = Vector2i(cell_pixels, cell_pixels)
 	atlas_source.texture = atlas_texture
 
+	for i in range(module_count):
+		atlas_source.create_tile(Vector2i(i, 0))
+
 	var source_id = tile_set.add_source(atlas_source)
 	_tile_source_id = source_id
 
