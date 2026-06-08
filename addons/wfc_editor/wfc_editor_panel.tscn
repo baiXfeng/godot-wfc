@@ -1,255 +1,50 @@
-[gd_scene format=3 uid="uid://djjnep75vi2bk"]
+[gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" uid="uid://cj43w8ju3lbhf" path="res://addons/wfc_editor/wfc_editor_panel.gd" id="1_script"]
+[ext_resource type="Script" path="res://addons/wfc_editor/wfc_editor_panel.gd" id="1_script"]
 
-[node name="WFCEditorPanel" type="Control" unique_id=1783244126]
-custom_minimum_size = Vector2(900, 600)
-layout_mode = 3
+[node name="WFCEditorPanel" type="Control"]
+layout_mode = 1
 anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="LoadScreen" type="Control" parent="." unique_id=247865498]
+[node name="LoadScreen" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
-[node name="LoadButton" type="Button" parent="LoadScreen" unique_id=1448907501]
-custom_minimum_size = Vector2(200, 60)
+[node name="LoadButton" type="Button" parent="LoadScreen"]
 layout_mode = 1
 anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-grow_horizontal = 2
-grow_vertical = 2
 text = "加载图块配置"
+custom_minimum_size = Vector2i(200, 60)
 
-[node name="EditorScreen" type="Control" parent="." unique_id=818215145]
+[node name="EditorScreen" type="Control" parent="."]
 visible = false
 layout_mode = 1
 anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
-[node name="TopBar" type="HBoxContainer" parent="EditorScreen" unique_id=1783688917]
+[node name="TopBar" type="HBoxContainer" parent="EditorScreen"]
 layout_mode = 1
-offset_right = 900.0
+anchor_right = 1.0
+offset_right = 0.0
 offset_bottom = 36.0
-size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="BackButton" type="Button" parent="EditorScreen/TopBar" unique_id=61884020]
+[node name="BackButton" type="Button" parent="EditorScreen/TopBar"]
 layout_mode = 2
 text = "< 返回"
 
-[node name="DirLabel" type="Label" parent="EditorScreen/TopBar" unique_id=1189712815]
+[node name="DirLabel" type="Label" parent="EditorScreen/TopBar"]
 layout_mode = 2
-size_flags_horizontal = 3
 text = "未选择目录"
 vertical_alignment = 1
+size_flags_horizontal = 3
 
-[node name="SaveButton" type="Button" parent="EditorScreen/TopBar" unique_id=1393993429]
+[node name="SaveButton" type="Button" parent="EditorScreen/TopBar"]
 layout_mode = 2
 text = "保存配置"
 
-[node name="HSplit" type="HSplitContainer" parent="EditorScreen" unique_id=306153785]
+[node name="HSplit" type="HSplitContainer" parent="EditorScreen"]
 layout_mode = 1
 anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
 offset_top = 40.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="LeftContainer" type="VBoxContainer" parent="EditorScreen/HSplit" unique_id=1129807286]
-custom_minimum_size = Vector2(210, 0)
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="LeftTitle" type="Label" parent="EditorScreen/HSplit/LeftContainer" unique_id=1781747619]
-layout_mode = 2
-text = "图块列表 (点选主图块)"
-
-[node name="LeftScroll" type="ScrollContainer" parent="EditorScreen/HSplit/LeftContainer" unique_id=515383588]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="LeftGrid" type="GridContainer" parent="EditorScreen/HSplit/LeftContainer/LeftScroll" unique_id=1355796393]
-layout_mode = 2
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
-columns = 2
-
-[node name="CenterContainer" type="VBoxContainer" parent="EditorScreen/HSplit" unique_id=1889731679]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 4
-alignment = 1
-
-[node name="SlotNorth" type="Control" parent="EditorScreen/HSplit/CenterContainer" unique_id=666568244]
-custom_minimum_size = Vector2(68, 84)
-layout_mode = 2
-
-[node name="TexN" type="TextureRect" parent="EditorScreen/HSplit/CenterContainer/SlotNorth" unique_id=558589047]
-modulate = Color(0.3, 0.3, 0.3, 1)
-layout_mode = 1
-offset_right = 68.0
-offset_bottom = 68.0
-expand_mode = 1
-stretch_mode = 5
-
-[node name="LabelN" type="Label" parent="EditorScreen/HSplit/CenterContainer/SlotNorth" unique_id=1606308604]
-layout_mode = 0
-offset_top = 68.0
-offset_right = 68.0
-offset_bottom = 84.0
-theme_override_font_sizes/font_size = 10
-horizontal_alignment = 1
-
-[node name="CheckN" type="CheckBox" parent="EditorScreen/HSplit/CenterContainer/SlotNorth" unique_id=2095259508]
-layout_mode = 0
-offset_left = 50.0
-offset_top = 2.0
-offset_right = 66.0
-offset_bottom = 18.0
-focus_mode = 0
-
-[node name="MidRow" type="HBoxContainer" parent="EditorScreen/HSplit/CenterContainer" unique_id=2056172975]
-layout_mode = 2
-theme_override_constants/separation = 8
-alignment = 1
-
-[node name="SlotWest" type="Control" parent="EditorScreen/HSplit/CenterContainer/MidRow" unique_id=1172191050]
-custom_minimum_size = Vector2(68, 84)
-layout_mode = 2
-
-[node name="TexW" type="TextureRect" parent="EditorScreen/HSplit/CenterContainer/MidRow/SlotWest" unique_id=772474067]
-modulate = Color(0.3, 0.3, 0.3, 1)
-layout_mode = 1
-offset_right = 68.0
-offset_bottom = 68.0
-expand_mode = 1
-stretch_mode = 5
-
-[node name="LabelW" type="Label" parent="EditorScreen/HSplit/CenterContainer/MidRow/SlotWest" unique_id=277172040]
-layout_mode = 0
-offset_top = 68.0
-offset_right = 68.0
-offset_bottom = 84.0
-theme_override_font_sizes/font_size = 10
-horizontal_alignment = 1
-
-[node name="CheckW" type="CheckBox" parent="EditorScreen/HSplit/CenterContainer/MidRow/SlotWest" unique_id=390970946]
-layout_mode = 0
-offset_left = 50.0
-offset_top = 2.0
-offset_right = 66.0
-offset_bottom = 18.0
-focus_mode = 0
-
-[node name="CenterTile" type="Control" parent="EditorScreen/HSplit/CenterContainer/MidRow" unique_id=463618535]
-custom_minimum_size = Vector2(144, 144)
-layout_mode = 2
-
-[node name="CenterTex" type="TextureRect" parent="EditorScreen/HSplit/CenterContainer/MidRow/CenterTile" unique_id=145371064]
-modulate = Color(0.5, 0.5, 0.5, 1)
-layout_mode = 1
-offset_right = 144.0
-offset_bottom = 144.0
-expand_mode = 1
-stretch_mode = 5
-
-[node name="CenterLabel" type="Label" parent="EditorScreen/HSplit/CenterContainer/MidRow/CenterTile" unique_id=551591113]
-layout_mode = 0
-offset_top = 144.0
-offset_right = 144.0
-offset_bottom = 164.0
-theme_override_font_sizes/font_size = 10
-horizontal_alignment = 1
-
-[node name="SlotEast" type="Control" parent="EditorScreen/HSplit/CenterContainer/MidRow" unique_id=1150615035]
-custom_minimum_size = Vector2(68, 84)
-layout_mode = 2
-
-[node name="TexE" type="TextureRect" parent="EditorScreen/HSplit/CenterContainer/MidRow/SlotEast" unique_id=1661241880]
-modulate = Color(0.3, 0.3, 0.3, 1)
-layout_mode = 1
-offset_right = 68.0
-offset_bottom = 68.0
-expand_mode = 1
-stretch_mode = 5
-
-[node name="LabelE" type="Label" parent="EditorScreen/HSplit/CenterContainer/MidRow/SlotEast" unique_id=975715884]
-layout_mode = 0
-offset_top = 68.0
-offset_right = 68.0
-offset_bottom = 84.0
-theme_override_font_sizes/font_size = 10
-horizontal_alignment = 1
-
-[node name="CheckE" type="CheckBox" parent="EditorScreen/HSplit/CenterContainer/MidRow/SlotEast" unique_id=1877804715]
-layout_mode = 0
-offset_left = 50.0
-offset_top = 2.0
-offset_right = 66.0
-offset_bottom = 18.0
-focus_mode = 0
-
-[node name="SlotSouth" type="Control" parent="EditorScreen/HSplit/CenterContainer" unique_id=1566675442]
-custom_minimum_size = Vector2(68, 84)
-layout_mode = 2
-
-[node name="TexS" type="TextureRect" parent="EditorScreen/HSplit/CenterContainer/SlotSouth" unique_id=1189368067]
-modulate = Color(0.3, 0.3, 0.3, 1)
-layout_mode = 1
-offset_right = 68.0
-offset_bottom = 68.0
-expand_mode = 1
-stretch_mode = 5
-
-[node name="LabelS" type="Label" parent="EditorScreen/HSplit/CenterContainer/SlotSouth" unique_id=162423763]
-layout_mode = 0
-offset_top = 68.0
-offset_right = 68.0
-offset_bottom = 84.0
-theme_override_font_sizes/font_size = 10
-horizontal_alignment = 1
-
-[node name="CheckS" type="CheckBox" parent="EditorScreen/HSplit/CenterContainer/SlotSouth" unique_id=934718895]
-layout_mode = 0
-offset_left = 50.0
-offset_top = 2.0
-offset_right = 66.0
-offset_bottom = 18.0
-focus_mode = 0
-
-[node name="RightContainer" type="VBoxContainer" parent="EditorScreen/HSplit" unique_id=814032488]
-custom_minimum_size = Vector2(210, 0)
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="RightTitle" type="Label" parent="EditorScreen/HSplit/RightContainer" unique_id=1282105766]
-layout_mode = 2
-text = "候选图块 (点选后配置连接)"
-
-[node name="RightScroll" type="ScrollContainer" parent="EditorScreen/HSplit/RightContainer" unique_id=24996656]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="RightGrid" type="GridContainer" parent="EditorScreen/HSplit/RightContainer/RightScroll" unique_id=1014520267]
-layout_mode = 2
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
-columns = 2
+offset_bottom = 0.0

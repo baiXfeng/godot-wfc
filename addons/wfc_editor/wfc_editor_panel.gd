@@ -6,15 +6,20 @@ var plugin: EditorPlugin
 
 # --- state ---
 var _dir_path: String = ""
-var _tile_data: Dictionary = {}      # name -> {texture_path, color, connectors: [[N,E,S,W]]}
-var _tile_textures: Dictionary = {}  # name -> Texture2D
+var _tile_data: Dictionary = {}
+var _tile_textures: Dictionary = {}
 var _selected_main: String = ""
 var _selected_candidate: String = ""
 
 const _DIRECTIONS = ["north", "east", "south", "west"]
 const _THUMB_SIZE := 64
 
-# --- scene node refs (set in _ready) ---
+# --- column roots ---
+var _left_root: Control
+var _center_root: Control
+var _right_root: Control
+
+# column node refs
 var _load_screen: Control
 var _editor_screen: Control
 var _dir_label: Label
@@ -22,40 +27,64 @@ var _left_grid: GridContainer
 var _right_grid: GridContainer
 var _center_tex: TextureRect
 var _center_label: Label
-
-# direction slot:  "north"->{tex,label,check}, etc
 var _slot_tex: Dictionary = {}
 var _slot_label: Dictionary = {}
 var _slot_check: Dictionary = {}
-
-# grid item panels
-var _left_items: Dictionary = {}   # name -> PanelContainer
+var _left_items: Dictionary = {}
 var _right_items: Dictionary = {}
 
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(900, 600)
-	_store_node_refs()
+	_store_root_refs()
+	_instantiate_columns()
+	_store_column_refs()
 	_connect_signals()
 	_editor_screen.hide()
 
 
-func _store_node_refs() -> void:
+func _store_root_refs() -> void:
 	_load_screen = $LoadScreen
 	_editor_screen = $EditorScreen
 	_dir_label = $EditorScreen/TopBar/DirLabel
-	_left_grid = $EditorScreen/HSplit/LeftContainer/LeftScroll/LeftGrid
-	_right_grid = $EditorScreen/HSplit/RightContainer/RightScroll/RightGrid
-	_center_tex = $EditorScreen/HSplit/CenterContainer/MidRow/CenterTile/CenterTex
-	_center_label = $EditorScreen/HSplit/CenterContainer/MidRow/CenterTile/CenterLabel
+
+
+func _instantiate_columns() -> void:
+	var split = $EditorScreen/HSplit
+
+	_left_root = load("res://addons/wfc_editor/wfc_editor_left.tscn").instantiate()
+	_left_root.custom_minimum_size = Vector2(210, 0)
+	split.add_child(_left_root)
+
+	_center_root = load("res://addons/wfc_editor/wfc_editor_center.tscn").instantiate()
+	split.add_child(_center_root)
+
+	_right_root = load("res://addons/wfc_editor/wfc_editor_right.tscn").instantiate()
+	_right_root.custom_minimum_size = Vector2(210, 0)
+	split.add_child(_right_root)
+
+
+func _store_column_refs() -> void:
+	_left_grid = _left_root.get_node("Scroll/Grid")
+	_right_grid = _right_root.get_node("Scroll/Grid")
+	_center_tex = _center_root.get_node("MidRow/CenterTile/CenterTex")
+	_center_label = _center_root.get_node("MidRow/CenterTile/CenterLabel")
 
 	for dir in _DIRECTIONS:
 		var cap = dir.capitalize()
-		var base = "EditorScreen/HSplit/CenterContainer"
-		var slot_path = base + ("/Slot" + cap) if dir in ["north", "south"] else base + "/MidRow/Slot" + cap
-		_slot_tex[dir]   = get_node(slot_path + "/Tex" + cap[0])
-		_slot_label[dir] = get_node(slot_path + "/Label" + cap[0])
-		_slot_check[dir] = get_node(slot_path + "/Check" + cap[0])
+		var slot: Node
+		if dir == "north":
+			slot = _center_root.get_node("SlotNorth")
+		elif dir == "south":
+			slot = _center_root.get_node("SlotSouth")
+		elif dir == "west":
+			slot = _center_root.get_node("MidRow/SlotWest")
+		else:
+			slot = _center_root.get_node("MidRow/SlotEast")
+
+		_slot_tex[dir]   = slot.get_node("Tex" + cap[0])
+		_slot_label[dir] = slot.get_node("Label" + cap[0])
+		_slot_check[dir] = slot.get_node("Check" + cap[0])
 
 
 func _connect_signals() -> void:
@@ -89,8 +118,7 @@ func _load_directory(path: String) -> void:
 	_tile_textures.clear()
 
 	var dir = DirAccess.open(path)
-	if dir == null:
-		return
+	if dir == null: return
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
 	while file_name != "":
@@ -102,8 +130,7 @@ func _load_directory(path: String) -> void:
 				"connectors": [[], [], [], []]
 			}
 			var tex = load(path + "/" + file_name) as Texture2D
-			if tex:
-				_tile_textures[base] = tex
+			if tex: _tile_textures[base] = tex
 		file_name = dir.get_next()
 
 	var config_path = path + "/modules.json"
@@ -118,16 +145,13 @@ func _load_directory(path: String) -> void:
 
 func _load_modules_json(path: String) -> void:
 	var file = FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		return
+	if file == null: return
 	var json = JSON.parse_string(file.get_as_text())
-	if json == null or not json.has("modules"):
-		return
+	if json == null or not json.has("modules"): return
 
 	for entry in json["modules"]:
 		var name = entry.get("name", "")
-		if not _tile_data.has(name):
-			continue
+		if not _tile_data.has(name): continue
 		var connectors = entry.get("connectors", [])
 		if connectors is Array and connectors.size() == 4:
 			var parsed = []
@@ -137,10 +161,8 @@ func _load_modules_json(path: String) -> void:
 				else:
 					parsed.append([])
 			_tile_data[name]["connectors"] = parsed
-		if entry.has("weight"):
-			_tile_data[name]["weight"] = entry["weight"]
-		if entry.has("rotate"):
-			_tile_data[name]["rotate"] = entry["rotate"]
+		if entry.has("weight"): _tile_data[name]["weight"] = entry["weight"]
+		if entry.has("rotate"): _tile_data[name]["rotate"] = entry["rotate"]
 
 
 func _refresh_tile_grids() -> void:
@@ -149,8 +171,7 @@ func _refresh_tile_grids() -> void:
 	for c in _right_grid.get_children(): c.queue_free()
 	_right_items.clear()
 
-	var names = _tile_data.keys()
-	names.sort()
+	var names = _tile_data.keys(); names.sort()
 
 	for tile_name in names:
 		var item = _make_tile_item(tile_name, false)
@@ -162,8 +183,7 @@ func _refresh_tile_grids() -> void:
 		_right_grid.add_child(ritem)
 		_right_items[tile_name] = ritem
 
-	_selected_main = ""
-	_selected_candidate = ""
+	_selected_main = ""; _selected_candidate = ""
 	_update_center()
 	_update_right_enabled(false)
 
@@ -173,12 +193,12 @@ func _make_tile_item(tile_name: String, is_right: bool) -> Control:
 	panel.custom_minimum_size = Vector2(_THUMB_SIZE + 12, _THUMB_SIZE + 26)
 	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.15, 0.15, 1)
-	style.border_width_left = 2; style.border_width_right = 2
-	style.border_width_top = 2;  style.border_width_bottom = 2
-	style.border_color = Color(0.15, 0.15, 0.15, 1)
-	panel.add_theme_stylebox_override("panel", style)
+	var s = StyleBoxFlat.new()
+	s.bg_color = Color(0.15, 0.15, 0.15, 1)
+	s.border_width_left = 2; s.border_width_right = 2
+	s.border_width_top = 2;  s.border_width_bottom = 2
+	s.border_color = Color(0.15, 0.15, 0.15, 1)
+	panel.add_theme_stylebox_override("panel", s)
 
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 2)
@@ -225,18 +245,18 @@ func _on_tile_clicked(tile_name: String, is_right: bool) -> void:
 
 func _update_left_highlight() -> void:
 	for name in _left_items:
-		var panel = _left_items[name]
-		var s = panel.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-		s.border_color = Color(0.3, 0.7, 1.0, 1) if name == _selected_main else Color(0.15, 0.15, 0.15, 1)
-		panel.add_theme_stylebox_override("panel", s)
+		var p = _left_items[name]
+		var st = p.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+		st.border_color = Color(0.3, 0.7, 1.0, 1) if name == _selected_main else Color(0.15, 0.15, 0.15, 1)
+		p.add_theme_stylebox_override("panel", st)
 
 
 func _update_right_highlight() -> void:
 	for name in _right_items:
-		var panel = _right_items[name]
-		var s = panel.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-		s.border_color = Color(0.3, 0.7, 1.0, 1) if name == _selected_candidate else Color(0.15, 0.15, 0.15, 1)
-		panel.add_theme_stylebox_override("panel", s)
+		var p = _right_items[name]
+		var st = p.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+		st.border_color = Color(0.3, 0.7, 1.0, 1) if name == _selected_candidate else Color(0.15, 0.15, 0.15, 1)
+		p.add_theme_stylebox_override("panel", st)
 
 
 func _update_center() -> void:
@@ -249,24 +269,20 @@ func _update_center() -> void:
 		_center_tex.modulate = Color.WHITE
 		_center_label.text = _selected_main
 
-	var candidate_tex = _tile_textures.get(_selected_candidate) if not _selected_candidate.is_empty() else null
-
+	var cand_tex = _tile_textures.get(_selected_candidate) if not _selected_candidate.is_empty() else null
 	for dir in _DIRECTIONS:
 		var tex: TextureRect = _slot_tex[dir]
 		var label: Label = _slot_label[dir]
-		if candidate_tex:
-			tex.texture = candidate_tex
-			label.text = _selected_candidate
+		if cand_tex:
+			tex.texture = cand_tex; label.text = _selected_candidate
 		else:
-			tex.texture = null
-			label.text = ""
+			tex.texture = null; label.text = ""
 		_update_slot_appearance(dir)
 
 
 func _update_slot_appearance(dir: String) -> void:
 	var tex: TextureRect = _slot_tex[dir]
 	var check: CheckBox = _slot_check[dir]
-
 	if _selected_main.is_empty() or _selected_candidate.is_empty():
 		check.button_pressed = false
 		tex.modulate = Color(0.3, 0.3, 0.3, 1)
@@ -299,11 +315,10 @@ func _update_right_enabled(enabled: bool) -> void:
 func _refresh_right_colors() -> void:
 	if _selected_main.is_empty(): return
 	for name in _right_items:
-		var has_any = false
+		var has = false
 		for dir in _DIRECTIONS:
-			if _is_connected(_selected_main, dir, name):
-				has_any = true; break
-		_right_items[name].modulate = Color.WHITE if has_any else Color(0.5, 0.5, 0.5, 1)
+			if _is_connected(_selected_main, dir, name): has = true; break
+		_right_items[name].modulate = Color.WHITE if has else Color(0.5, 0.5, 0.5, 1)
 
 
 # ------- connection data -------
@@ -311,8 +326,8 @@ func _refresh_right_colors() -> void:
 func _get_tags(tile: String, dir: String) -> Array:
 	var idx = _DIRECTIONS.find(dir)
 	if idx < 0: return []
-	var conns: Array = _tile_data.get(tile, {}).get("connectors", [[],[],[],[]])
-	return conns[idx].duplicate() if conns.size() == 4 else []
+	var c: Array = _tile_data.get(tile, {}).get("connectors", [[],[],[],[]])
+	return c[idx].duplicate() if c.size() == 4 else []
 
 
 func _opposite_dir(dir: String) -> String:
@@ -324,12 +339,11 @@ func _opposite_dir(dir: String) -> String:
 	return ""
 
 
-func _is_connected(main: String, dir: String, candidate: String) -> bool:
-	var main_tags = _get_tags(main, dir)
-	var cand_tags = _get_tags(candidate, _opposite_dir(dir))
-	if main_tags.is_empty() or cand_tags.is_empty(): return false
-	for tag in main_tags:
-		if _match_tag(tag, cand_tags): return true
+func _is_connected(main: String, dir: String, cand: String) -> bool:
+	var mt = _get_tags(main, dir); var ct = _get_tags(cand, _opposite_dir(dir))
+	if mt.is_empty() or ct.is_empty(): return false
+	for tag in mt:
+		if _match_tag(tag, ct): return true
 	return false
 
 
@@ -349,52 +363,38 @@ func _next_tag_id() -> int:
 	return max_id + 1
 
 
-func _add_connection(main: String, dir: String, candidate: String) -> void:
-	if _is_connected(main, dir, candidate): return
+func _add_connection(main: String, dir: String, cand: String) -> void:
+	if _is_connected(main, dir, cand): return
 	var tag_id = _next_tag_id()
 	_tile_data[main]["connectors"][_DIRECTIONS.find(dir)].append("L%d" % tag_id)
-	_tile_data[candidate]["connectors"][_DIRECTIONS.find(_opposite_dir(dir))].append("R%d" % tag_id)
+	_tile_data[cand]["connectors"][_DIRECTIONS.find(_opposite_dir(dir))].append("R%d" % tag_id)
 
 
-func _remove_connection(main: String, dir: String, candidate: String) -> void:
-	var mi = _DIRECTIONS.find(dir)
-	var ci = _DIRECTIONS.find(_opposite_dir(dir))
-	var mc: Array = _tile_data[main]["connectors"]
-	var cc: Array = _tile_data[candidate]["connectors"]
+func _remove_connection(main: String, dir: String, cand: String) -> void:
+	var mi = _DIRECTIONS.find(dir); var ci = _DIRECTIONS.find(_opposite_dir(dir))
+	var mc: Array = _tile_data[main]["connectors"]; var cc: Array = _tile_data[cand]["connectors"]
 	if mc.size() != 4 or cc.size() != 4: return
-
-	var rm_main = ""; var rm_cand = ""
+	var rm = ""; var rc = ""
 	for tag in mc[mi]:
-		if tag.begins_with("L"):
-			var check = "R" + tag.substr(1)
-			if check in cc[ci]: rm_main = tag; rm_cand = check; break
-		if tag.begins_with("R"):
-			var check = "L" + tag.substr(1)
-			if check in cc[ci]: rm_main = tag; rm_cand = check; break
-	if not rm_main.is_empty():
-		mc[mi].erase(rm_main)
-		cc[ci].erase(rm_cand)
+		if tag.begins_with("L") and ("R" + tag.substr(1)) in cc[ci]: rm = tag; rc = "R" + tag.substr(1); break
+		if tag.begins_with("R") and ("L" + tag.substr(1)) in cc[ci]: rm = tag; rc = "L" + tag.substr(1); break
+	if not rm.is_empty(): mc[mi].erase(rm); cc[ci].erase(rc)
 
 
 # ------- save / back -------
 
 func _on_save_pressed() -> void:
 	if _dir_path.is_empty(): return
-
 	var modules = []
 	for tile_name in _tile_data:
 		var data = _tile_data[tile_name]
 		var conns = data.get("connectors", [[],[],[],[]])
 		var strs = []
 		for tags in conns:
-			if tags.is_empty():
-				strs.append("")
+			if tags.is_empty(): strs.append("")
 			else:
-				var dedup = {}
-				for t in tags: dedup[t] = true
-				var keys = dedup.keys(); keys.sort()
-				strs.append(",".join(keys))
-
+				var dedup = {}; for t in tags: dedup[t] = true
+				var keys = dedup.keys(); keys.sort(); strs.append(",".join(keys))
 		var entry = {"name": tile_name, "connectors": strs}
 		if data.has("weight"): entry["weight"] = data["weight"]
 		if data.has("rotate"): entry["rotate"] = data["rotate"]
@@ -402,11 +402,8 @@ func _on_save_pressed() -> void:
 
 	var out = {"connector_colors": {}, "modules": modules}
 	var file = FileAccess.open(_dir_path + "/modules.json", FileAccess.WRITE)
-	if file:
-		file.store_string(JSON.stringify(out, "\t"))
-		file.close()
+	if file: file.store_string(JSON.stringify(out, "\t")); file.close()
 
 
 func _on_back_pressed() -> void:
-	_editor_screen.hide()
-	_load_screen.show()
+	_editor_screen.hide(); _load_screen.show()

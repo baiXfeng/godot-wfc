@@ -1,0 +1,144 @@
+[gd_scene format=3]
+
+[node name="CenterColumn" type="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+theme_override_constants/separation = 4
+
+[node name="SlotNorth" type="Control" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(68, 84)
+
+[node name="TexN" type="TextureRect" parent="SlotNorth"]
+layout_mode = 1
+offset_right = 68.0
+offset_bottom = 68.0
+expand_mode = 1
+stretch_mode = 5
+modulate = Color(0.3, 0.3, 0.3, 1)
+
+[node name="LabelN" type="Label" parent="SlotNorth"]
+layout_mode = 0
+offset_top = 68.0
+offset_right = 68.0
+offset_bottom = 84.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="CheckN" type="CheckBox" parent="SlotNorth"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 2.0
+offset_right = 66.0
+offset_bottom = 18.0
+focus_mode = 0
+
+[node name="MidRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="SlotWest" type="Control" parent="MidRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(68, 84)
+
+[node name="TexW" type="TextureRect" parent="MidRow/SlotWest"]
+layout_mode = 1
+offset_right = 68.0
+offset_bottom = 68.0
+expand_mode = 1
+stretch_mode = 5
+modulate = Color(0.3, 0.3, 0.3, 1)
+
+[node name="LabelW" type="Label" parent="MidRow/SlotWest"]
+layout_mode = 0
+offset_top = 68.0
+offset_right = 68.0
+offset_bottom = 84.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="CheckW" type="CheckBox" parent="MidRow/SlotWest"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 2.0
+offset_right = 66.0
+offset_bottom = 18.0
+focus_mode = 0
+
+[node name="CenterTile" type="Control" parent="MidRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(144, 144)
+
+[node name="CenterTex" type="TextureRect" parent="MidRow/CenterTile"]
+layout_mode = 1
+offset_right = 144.0
+offset_bottom = 144.0
+expand_mode = 1
+stretch_mode = 5
+modulate = Color(0.5, 0.5, 0.5, 1)
+
+[node name="CenterLabel" type="Label" parent="MidRow/CenterTile"]
+layout_mode = 0
+offset_top = 144.0
+offset_right = 144.0
+offset_bottom = 164.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="SlotEast" type="Control" parent="MidRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(68, 84)
+
+[node name="TexE" type="TextureRect" parent="MidRow/SlotEast"]
+layout_mode = 1
+offset_right = 68.0
+offset_bottom = 68.0
+expand_mode = 1
+stretch_mode = 5
+modulate = Color(0.3, 0.3, 0.3, 1)
+
+[node name="LabelE" type="Label" parent="MidRow/SlotEast"]
+layout_mode = 0
+offset_top = 68.0
+offset_right = 68.0
+offset_bottom = 84.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="CheckE" type="CheckBox" parent="MidRow/SlotEast"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 2.0
+offset_right = 66.0
+offset_bottom = 18.0
+focus_mode = 0
+
+[node name="SlotSouth" type="Control" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(68, 84)
+
+[node name="TexS" type="TextureRect" parent="SlotSouth"]
+layout_mode = 1
+offset_right = 68.0
+offset_bottom = 68.0
+expand_mode = 1
+stretch_mode = 5
+modulate = Color(0.3, 0.3, 0.3, 1)
+
+[node name="LabelS" type="Label" parent="SlotSouth"]
+layout_mode = 0
+offset_top = 68.0
+offset_right = 68.0
+offset_bottom = 84.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="CheckS" type="CheckBox" parent="SlotSouth"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 2.0
+offset_right = 66.0
+offset_bottom = 18.0
+focus_mode = 0

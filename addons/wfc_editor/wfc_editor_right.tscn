@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[node name="RightColumn" type="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 2
+text = "候选图块 (点选后配置连接)"
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 2
+horizontal_scroll_mode = 0
+size_flags_vertical = 3
+
+[node name="Grid" type="GridContainer" parent="Scroll"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
