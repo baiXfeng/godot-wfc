@@ -1,6 +1,9 @@
-[gd_scene format=3 uid="uid://dw24l3f7obvym"]
+[gd_scene load_steps=2 format=3 uid="uid://dw24l3f7obvym"]
 
-[node name="LeftColumn" type="VBoxContainer" unique_id=205801592]
+[ext_resource type="Script" path="res://addons/wfc_editor/wfc_editor_left.gd" id="1_script"]
+
+[node name="LeftColumn" type="VBoxContainer"]
+script = ExtResource("1_script")
 size_flags_vertical = 3
 theme_override_constants/separation = 4
 

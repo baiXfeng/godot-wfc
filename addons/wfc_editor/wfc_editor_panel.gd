@@ -12,90 +12,48 @@ var _selected_main: String = ""
 var _selected_candidate: String = ""
 
 const _DIRECTIONS = ["north", "east", "south", "west"]
-const _THUMB_SIZE := 64
 
-# --- column roots ---
-var _left_root: Control
-var _center_root: Control
-var _right_root: Control
-
-# column node refs
 var _load_screen: Control
 var _editor_screen: Control
 var _dir_label: Label
-var _left_grid: GridContainer
-var _right_grid: GridContainer
-var _center_tex: TextureRect
-var _center_label: Label
-var _slot_tex: Dictionary = {}
-var _slot_label: Dictionary = {}
-var _slot_check: Dictionary = {}
-var _left_items: Dictionary = {}
-var _right_items: Dictionary = {}
+var _left: WFCEditorLeft
+var _center: WFCEditorCenter
+var _right: WFCEditorRight
 
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(900, 600)
-	_store_root_refs()
-	_instantiate_columns()
-	_store_column_refs()
-	_connect_signals()
-	_editor_screen.hide()
-
-
-func _store_root_refs() -> void:
 	_load_screen = $LoadScreen
 	_editor_screen = $EditorScreen
 	_dir_label = $EditorScreen/TopBar/DirLabel
+	_instantiate_columns()
+	_connect_signals()
+	_editor_screen.hide()
 
 
 func _instantiate_columns() -> void:
 	var split = $EditorScreen/HSplit
 
-	_left_root = load("res://addons/wfc_editor/wfc_editor_left.tscn").instantiate()
-	_left_root.custom_minimum_size = Vector2(210, 0)
-	split.add_child(_left_root)
+	_left = load("res://addons/wfc_editor/wfc_editor_left.tscn").instantiate()
+	_left.custom_minimum_size = Vector2(210, 0)
+	split.add_child(_left)
 
-	_center_root = load("res://addons/wfc_editor/wfc_editor_center.tscn").instantiate()
-	split.add_child(_center_root)
+	_center = load("res://addons/wfc_editor/wfc_editor_center.tscn").instantiate()
+	split.add_child(_center)
 
-	_right_root = load("res://addons/wfc_editor/wfc_editor_right.tscn").instantiate()
-	_right_root.custom_minimum_size = Vector2(210, 0)
-	split.add_child(_right_root)
+	_right = load("res://addons/wfc_editor/wfc_editor_right.tscn").instantiate()
+	_right.custom_minimum_size = Vector2(210, 0)
+	split.add_child(_right)
 
-
-func _store_column_refs() -> void:
-	_left_grid = _left_root.get_node("Scroll/Grid")
-	_right_grid = _right_root.get_node("Scroll/Grid")
-	_center_tex = _center_root.get_node("MidRow/CenterTile/CenterTex")
-	_center_label = _center_root.get_node("MidRow/CenterTile/CenterLabel")
-
-	for dir in _DIRECTIONS:
-		var cap = dir.capitalize()
-		var slot: Node
-		if dir == "north":
-			slot = _center_root.get_node("SlotNorth")
-		elif dir == "south":
-			slot = _center_root.get_node("SlotSouth")
-		elif dir == "west":
-			slot = _center_root.get_node("MidRow/SlotWest")
-		else:
-			slot = _center_root.get_node("MidRow/SlotEast")
-
-		_slot_tex[dir]   = slot.get_node("Tex" + cap[0])
-		_slot_label[dir] = slot.get_node("Label" + cap[0])
-		_slot_check[dir] = slot.get_node("Check" + cap[0])
+	_left.tile_selected.connect(_on_main_selected)
+	_right.tile_selected.connect(_on_candidate_selected)
+	_center.slot_checked.connect(_on_slot_checked)
 
 
 func _connect_signals() -> void:
 	$LoadScreen/LoadButton.pressed.connect(_on_load_pressed)
 	$EditorScreen/TopBar/BackButton.pressed.connect(_on_back_pressed)
 	$EditorScreen/TopBar/SaveButton.pressed.connect(_on_save_pressed)
-
-	for dir in _DIRECTIONS:
-		var check: CheckBox = _slot_check[dir]
-		var d = dir
-		check.toggled.connect(func(v): _on_slot_checked(d, v))
 
 
 # ------- actions -------
@@ -166,135 +124,35 @@ func _load_modules_json(path: String) -> void:
 
 
 func _refresh_tile_grids() -> void:
-	for c in _left_grid.get_children(): c.queue_free()
-	_left_items.clear()
-	for c in _right_grid.get_children(): c.queue_free()
-	_right_items.clear()
-
 	var names = _tile_data.keys(); names.sort()
-
-	for tile_name in names:
-		var item = _make_tile_item(tile_name, false)
-		_left_grid.add_child(item)
-		_left_items[tile_name] = item
-
-		var ritem = _make_tile_item(tile_name, true)
-		ritem.modulate = Color(0.5, 0.5, 0.5, 1)
-		_right_grid.add_child(ritem)
-		_right_items[tile_name] = ritem
-
+	_left.populate(names, _tile_textures)
+	_right.populate(names, _tile_textures)
 	_selected_main = ""; _selected_candidate = ""
-	_update_center()
-	_update_right_enabled(false)
+	_center.set_main("", null)
 
 
-func _make_tile_item(tile_name: String, is_right: bool) -> Control:
-	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(_THUMB_SIZE + 12, _THUMB_SIZE + 26)
-	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+# ------- event handling -------
 
-	var s = StyleBoxFlat.new()
-	s.bg_color = Color(0.15, 0.15, 0.15, 1)
-	s.border_width_left = 2; s.border_width_right = 2
-	s.border_width_top = 2;  s.border_width_bottom = 2
-	s.border_color = Color(0.15, 0.15, 0.15, 1)
-	panel.add_theme_stylebox_override("panel", s)
-
-	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 2)
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	panel.add_child(vbox)
-
-	var rect = TextureRect.new()
-	rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH
-	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	rect.custom_minimum_size = Vector2(_THUMB_SIZE, _THUMB_SIZE)
-	var tex = _tile_textures.get(tile_name)
-	if tex: rect.texture = tex
-	vbox.add_child(rect)
-
-	var label = Label.new()
-	label.text = tile_name
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 10)
-	label.clip_text = true
-	label.custom_minimum_size = Vector2(_THUMB_SIZE, 16)
-	vbox.add_child(label)
-
-	panel.gui_input.connect(func(event):
-		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			_on_tile_clicked(tile_name, is_right)
-	)
-	return panel
+func _on_main_selected(tile_name: String) -> void:
+	_selected_main = tile_name
+	_selected_candidate = ""
+	_left.highlight(tile_name)
+	_center.set_main(tile_name, _tile_textures.get(tile_name))
+	_center.clear_candidate()
+	_center.reset_slots()
+	_right.set_enabled(true)
+	_refresh_right_colors()
 
 
-func _on_tile_clicked(tile_name: String, is_right: bool) -> void:
-	if is_right:
-		if _selected_main.is_empty(): return
-		_selected_candidate = tile_name
-		_update_right_highlight()
-		_update_center()
-	else:
-		_selected_main = tile_name
-		_selected_candidate = ""
-		_update_left_highlight()
-		_update_center()
-		_update_right_enabled(true)
-		_refresh_right_colors()
+func _on_candidate_selected(tile_name: String) -> void:
+	if _selected_main.is_empty(): return
+	_selected_candidate = tile_name
+	_right.highlight(tile_name)
+	_center.set_candidate(tile_name, _tile_textures.get(tile_name))
 
-
-func _update_left_highlight() -> void:
-	for name in _left_items:
-		var p = _left_items[name]
-		var st = p.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-		st.border_color = Color(0.3, 0.7, 1.0, 1) if name == _selected_main else Color(0.15, 0.15, 0.15, 1)
-		p.add_theme_stylebox_override("panel", st)
-
-
-func _update_right_highlight() -> void:
-	for name in _right_items:
-		var p = _right_items[name]
-		var st = p.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-		st.border_color = Color(0.3, 0.7, 1.0, 1) if name == _selected_candidate else Color(0.15, 0.15, 0.15, 1)
-		p.add_theme_stylebox_override("panel", st)
-
-
-func _update_center() -> void:
-	if _selected_main.is_empty():
-		_center_tex.texture = null
-		_center_tex.modulate = Color(0.5, 0.5, 0.5, 1)
-		_center_label.text = ""
-	else:
-		_center_tex.texture = _tile_textures.get(_selected_main)
-		_center_tex.modulate = Color.WHITE
-		_center_label.text = _selected_main
-
-	var cand_tex = _tile_textures.get(_selected_candidate) if not _selected_candidate.is_empty() else null
 	for dir in _DIRECTIONS:
-		var tex: TextureRect = _slot_tex[dir]
-		var label: Label = _slot_label[dir]
-		if cand_tex:
-			tex.texture = cand_tex; label.text = _selected_candidate
-		else:
-			tex.texture = null; label.text = ""
-		_update_slot_appearance(dir)
-
-
-func _update_slot_appearance(dir: String) -> void:
-	var tex: TextureRect = _slot_tex[dir]
-	var check: CheckBox = _slot_check[dir]
-	if _selected_main.is_empty() or _selected_candidate.is_empty():
-		check.button_pressed = false
-		tex.modulate = Color(0.3, 0.3, 0.3, 1)
-		check.visible = false
-		return
-
-	check.visible = true
-	var connected = _is_connected(_selected_main, dir, _selected_candidate)
-	check.set_block_signals(true)
-	check.button_pressed = connected
-	check.set_block_signals(false)
-	tex.modulate = Color.WHITE if connected else Color(0.35, 0.35, 0.35, 1)
+		var connected = _is_connected(_selected_main, dir, _selected_candidate)
+		_center.set_slot_connected(dir, connected)
 
 
 func _on_slot_checked(dir: String, checked: bool) -> void:
@@ -303,25 +161,20 @@ func _on_slot_checked(dir: String, checked: bool) -> void:
 		_add_connection(_selected_main, dir, _selected_candidate)
 	else:
 		_remove_connection(_selected_main, dir, _selected_candidate)
-	_update_slot_appearance(dir)
 	_refresh_right_colors()
-
-
-func _update_right_enabled(enabled: bool) -> void:
-	for name in _right_items:
-		_right_items[name].modulate = Color.WHITE if enabled else Color(0.5, 0.5, 0.5, 1)
 
 
 func _refresh_right_colors() -> void:
 	if _selected_main.is_empty(): return
-	for name in _right_items:
+	var names = _tile_data.keys()
+	for name in names:
 		var has = false
 		for dir in _DIRECTIONS:
 			if _is_connected(_selected_main, dir, name): has = true; break
-		_right_items[name].modulate = Color.WHITE if has else Color(0.5, 0.5, 0.5, 1)
+		_right.set_connected(name, has)
 
 
-# ------- connection data -------
+# ------- data logic -------
 
 func _get_tags(tile: String, dir: String) -> Array:
 	var idx = _DIRECTIONS.find(dir)
@@ -332,10 +185,14 @@ func _get_tags(tile: String, dir: String) -> Array:
 
 func _opposite_dir(dir: String) -> String:
 	match dir:
-		"north": return "south"
-		"south": return "north"
-		"east":  return "west"
-		"west":  return "east"
+		"north":
+			return "south"
+		"south":
+			return "north"
+		"east":
+			return "west"
+		"west":
+			return "east"
 	return ""
 
 
