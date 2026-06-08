@@ -1,50 +1,70 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://shs8msaxsnut"]
 
-[ext_resource type="Script" path="res://addons/wfc_editor/wfc_editor_panel.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://cj43w8ju3lbhf" path="res://addons/wfc_editor/wfc_editor_panel.gd" id="1_script"]
 
-[node name="WFCEditorPanel" type="Control"]
-layout_mode = 1
+[node name="WFCEditorPanel" type="Control" unique_id=1783621458]
+layout_mode = 3
 anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="LoadScreen" type="Control" parent="."]
+[node name="LoadScreen" type="Control" parent="." unique_id=230011817]
 layout_mode = 1
 anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="LoadButton" type="Button" parent="LoadScreen"]
+[node name="LoadButton" type="Button" parent="LoadScreen" unique_id=283740503]
+custom_minimum_size = Vector2(200, 60)
 layout_mode = 1
 anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
 text = "加载图块配置"
-custom_minimum_size = Vector2i(200, 60)
 
-[node name="EditorScreen" type="Control" parent="."]
+[node name="EditorScreen" type="Control" parent="." unique_id=478014124]
 visible = false
 layout_mode = 1
 anchors_preset = 15
-
-[node name="TopBar" type="HBoxContainer" parent="EditorScreen"]
-layout_mode = 1
 anchor_right = 1.0
-offset_right = 0.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopBar" type="HBoxContainer" parent="EditorScreen" unique_id=2108622657]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
 offset_bottom = 36.0
 theme_override_constants/separation = 8
 
-[node name="BackButton" type="Button" parent="EditorScreen/TopBar"]
+[node name="BackButton" type="Button" parent="EditorScreen/TopBar" unique_id=1390562617]
 layout_mode = 2
 text = "< 返回"
 
-[node name="DirLabel" type="Label" parent="EditorScreen/TopBar"]
+[node name="DirLabel" type="Label" parent="EditorScreen/TopBar" unique_id=1811674273]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "未选择目录"
 vertical_alignment = 1
-size_flags_horizontal = 3
 
-[node name="SaveButton" type="Button" parent="EditorScreen/TopBar"]
+[node name="SaveButton" type="Button" parent="EditorScreen/TopBar" unique_id=1697455110]
 layout_mode = 2
 text = "保存配置"
 
-[node name="HSplit" type="HSplitContainer" parent="EditorScreen"]
+[node name="HSplit" type="HSplitContainer" parent="EditorScreen" unique_id=1650261536]
 layout_mode = 1
 anchors_preset = 15
-offset_top = 40.0
-offset_bottom = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

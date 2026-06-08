@@ -1,21 +1,20 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dw24l3f7obvym"]
 
-[node name="LeftColumn" type="VBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
+[node name="LeftColumn" type="VBoxContainer" unique_id=205801592]
+size_flags_vertical = 3
 theme_override_constants/separation = 4
 
-[node name="Title" type="Label" parent="."]
+[node name="Title" type="Label" parent="." unique_id=712175501]
 layout_mode = 2
 text = "图块列表 (点选主图块)"
 
-[node name="Scroll" type="ScrollContainer" parent="."]
+[node name="Scroll" type="ScrollContainer" parent="." unique_id=1739728085]
 layout_mode = 2
-horizontal_scroll_mode = 0
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="Grid" type="GridContainer" parent="Scroll"]
+[node name="Grid" type="GridContainer" parent="Scroll" unique_id=1473536312]
 layout_mode = 2
-columns = 2
 theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4
+columns = 2
