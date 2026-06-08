@@ -6,235 +6,67 @@ var plugin: EditorPlugin
 
 # --- state ---
 var _dir_path: String = ""
-var _tile_data: Dictionary = {}  # name -> {texture_path, color, connectors: [[tags],...]}
+var _tile_data: Dictionary = {}      # name -> {texture_path, color, connectors: [[N,E,S,W]]}
 var _tile_textures: Dictionary = {}  # name -> Texture2D
 var _selected_main: String = ""
 var _selected_candidate: String = ""
 
-# --- UI roots ---
-var _load_screen: Control
-var _editor_screen: Control
-
-# left grid
-var _left_scroll: ScrollContainer
-var _left_grid: GridContainer
-var _left_items: Dictionary = {}  # name -> Control
-
-# center
-var _center_main_rect: TextureRect
-var _center_main_label: Label
-var _slot_north: Control
-var _slot_east: Control
-var _slot_south: Control
-var _slot_west: Control
-var _check_north: CheckBox
-var _check_east: CheckBox
-var _check_south: CheckBox
-var _check_west: CheckBox
-var _slot_rects: Dictionary = {}  # "north" -> TextureRect, etc
-var _slot_labels: Dictionary = {}
-var _checks: Dictionary = {}  # "north" -> CheckBox, etc
-
-# right grid
-var _right_scroll: ScrollContainer
-var _right_grid: GridContainer
-var _right_items: Dictionary = {}  # name -> Control
-
 const _DIRECTIONS = ["north", "east", "south", "west"]
 const _THUMB_SIZE := 64
+
+# --- scene node refs (set in _ready) ---
+var _load_screen: Control
+var _editor_screen: Control
+var _dir_label: Label
+var _left_grid: GridContainer
+var _right_grid: GridContainer
+var _center_tex: TextureRect
+var _center_label: Label
+
+# direction slot:  "north"->{tex,label,check}, etc
+var _slot_tex: Dictionary = {}
+var _slot_label: Dictionary = {}
+var _slot_check: Dictionary = {}
+
+# grid item panels
+var _left_items: Dictionary = {}   # name -> PanelContainer
+var _right_items: Dictionary = {}
 
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(900, 600)
-	_build_load_screen()
-	_build_editor_screen()
-
-func _build_load_screen() -> void:
-	_load_screen = Control.new()
-	_load_screen.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(_load_screen)
-
-	var btn = Button.new()
-	btn.text = "加载图块配置"
-	btn.set_anchors_preset(Control.PRESET_CENTER)
-	btn.custom_minimum_size = Vector2(200, 60)
-	btn.pressed.connect(_on_load_pressed)
-	_load_screen.add_child(btn)
-
-
-func _build_editor_screen() -> void:
-	_editor_screen = Control.new()
-	_editor_screen.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_store_node_refs()
+	_connect_signals()
 	_editor_screen.hide()
-	add_child(_editor_screen)
-
-	# Top bar
-	var top_bar = HBoxContainer.new()
-	top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top_bar.add_theme_constant_override("separation", 8)
-
-	var back_btn = Button.new()
-	back_btn.text = "< 返回"
-	back_btn.pressed.connect(_on_back_pressed)
-	top_bar.add_child(back_btn)
-
-	var dir_label = Label.new()
-	dir_label.name = "DirLabel"
-	dir_label.text = "未选择目录"
-	dir_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	top_bar.add_child(dir_label)
-
-	var save_btn = Button.new()
-	save_btn.text = "保存配置"
-	save_btn.pressed.connect(_on_save_pressed)
-	top_bar.add_child(save_btn)
-
-	_editor_screen.add_child(top_bar)
-
-	# Split container
-	var split = HSplitContainer.new()
-	split.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 0)
-	split.position = Vector2(0, 36)
-	split.size = Vector2(900, 564)
-	_editor_screen.add_child(split)
-
-	# --- Left column ---
-	var left_vbox = VBoxContainer.new()
-	left_vbox.custom_minimum_size = Vector2(200, 400)
-	left_vbox.size_flags_horizontal = Control.SIZE_EXPAND
-	left_vbox.add_theme_constant_override("separation", 4)
-	split.add_child(left_vbox)
-
-	var left_label = Label.new()
-	left_label.text = "图块列表 (点选主图块)"
-	left_vbox.add_child(left_label)
-
-	_left_scroll = ScrollContainer.new()
-	_left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_left_scroll.size_flags_vertical = Control.SIZE_EXPAND
-	left_vbox.add_child(_left_scroll)
-
-	_left_grid = GridContainer.new()
-	_left_grid.columns = 2
-	_left_grid.add_theme_constant_override("h_separation", 4)
-	_left_grid.add_theme_constant_override("v_separation", 4)
-	_left_scroll.add_child(_left_grid)
-
-	# --- Center column ---
-	var center = VBoxContainer.new()
-	center.custom_minimum_size = Vector2(300, 400)
-	center.size_flags_horizontal = Control.SIZE_EXPAND
-	center.alignment = BoxContainer.ALIGNMENT_CENTER
-	center.add_theme_constant_override("separation", 4)
-	split.add_child(center)
-
-	# North slot
-	_slot_north = _make_direction_slot("north")
-	_check_north = _slot_north.get_node("Check")
-	_checks["north"] = _check_north
-	_slot_rects["north"] = _slot_north.get_node("TextureRect")
-	_slot_labels["north"] = _slot_north.get_node("Label")
-	center.add_child(_slot_north)
-
-	# Middle row: west | center | east
-	var mid_row = HBoxContainer.new()
-	mid_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	mid_row.add_theme_constant_override("separation", 8)
-	center.add_child(mid_row)
-
-	_slot_west = _make_direction_slot("west")
-	_check_west = _slot_west.get_node("Check")
-	_checks["west"] = _check_west
-	_slot_rects["west"] = _slot_west.get_node("TextureRect")
-	_slot_labels["west"] = _slot_west.get_node("Label")
-	mid_row.add_child(_slot_west)
-
-	# Center tile
-	var center_tile = Control.new()
-	center_tile.custom_minimum_size = Vector2(_THUMB_SIZE * 2 + 8, _THUMB_SIZE * 2 + 8)
-	mid_row.add_child(center_tile)
-
-	_center_main_rect = TextureRect.new()
-	_center_main_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_center_main_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_center_main_rect.custom_minimum_size = Vector2(_THUMB_SIZE * 2, _THUMB_SIZE * 2)
-	_center_main_rect.modulate = Color(0.5, 0.5, 0.5, 1)
-	center_tile.add_child(_center_main_rect)
-
-	_center_main_label = Label.new()
-	_center_main_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_center_main_label.position = Vector2(0, _THUMB_SIZE * 2)
-	_center_main_label.custom_minimum_size = Vector2(_THUMB_SIZE * 2, 20)
-	center_tile.add_child(_center_main_label)
-
-	_slot_east = _make_direction_slot("east")
-	_check_east = _slot_east.get_node("Check")
-	_checks["east"] = _check_east
-	_slot_rects["east"] = _slot_east.get_node("TextureRect")
-	_slot_labels["east"] = _slot_east.get_node("Label")
-	mid_row.add_child(_slot_east)
-
-	# South slot
-	_slot_south = _make_direction_slot("south")
-	_check_south = _slot_south.get_node("Check")
-	_checks["south"] = _check_south
-	_slot_rects["south"] = _slot_south.get_node("TextureRect")
-	_slot_labels["south"] = _slot_south.get_node("Label")
-	center.add_child(_slot_south)
-
-	# --- Right column ---
-	var right_vbox = VBoxContainer.new()
-	right_vbox.custom_minimum_size = Vector2(200, 400)
-	right_vbox.size_flags_horizontal = Control.SIZE_EXPAND
-	right_vbox.add_theme_constant_override("separation", 4)
-	split.add_child(right_vbox)
-
-	var right_label = Label.new()
-	right_label.text = "候选图块 (点选后配置连接)"
-	right_vbox.add_child(right_label)
-
-	_right_scroll = ScrollContainer.new()
-	_right_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_right_scroll.size_flags_vertical = Control.SIZE_EXPAND
-	right_vbox.add_child(_right_scroll)
-
-	_right_grid = GridContainer.new()
-	_right_grid.columns = 2
-	_right_grid.add_theme_constant_override("h_separation", 4)
-	_right_grid.add_theme_constant_override("v_separation", 4)
-	_right_scroll.add_child(_right_grid)
 
 
-func _make_direction_slot(dir_name: String) -> Control:
-	var c = Control.new()
-	c.custom_minimum_size = Vector2(_THUMB_SIZE, _THUMB_SIZE + 20)
+func _store_node_refs() -> void:
+	_load_screen = $LoadScreen
+	_editor_screen = $EditorScreen
+	_dir_label = $EditorScreen/TopBar/DirLabel
+	_left_grid = $EditorScreen/HSplit/LeftContainer/LeftScroll/LeftGrid
+	_right_grid = $EditorScreen/HSplit/RightContainer/RightScroll/RightGrid
+	_center_tex = $EditorScreen/HSplit/CenterContainer/MidRow/CenterTile/CenterTex
+	_center_label = $EditorScreen/HSplit/CenterContainer/MidRow/CenterTile/CenterLabel
 
-	var rect = TextureRect.new()
-	rect.name = "TextureRect"
-	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	rect.custom_minimum_size = Vector2(_THUMB_SIZE, _THUMB_SIZE)
-	rect.modulate = Color(0.3, 0.3, 0.3, 1)
-	c.add_child(rect)
+	for dir in _DIRECTIONS:
+		var cap = dir.capitalize()
+		var base = "EditorScreen/HSplit/CenterContainer"
+		var slot_path = base + ("/Slot" + cap) if dir in ["north", "south"] else base + "/MidRow/Slot" + cap
+		_slot_tex[dir]   = get_node(slot_path + "/Tex" + cap[0])
+		_slot_label[dir] = get_node(slot_path + "/Label" + cap[0])
+		_slot_check[dir] = get_node(slot_path + "/Check" + cap[0])
 
-	var label = Label.new()
-	label.name = "Label"
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.position = Vector2(0, _THUMB_SIZE)
-	label.custom_minimum_size = Vector2(_THUMB_SIZE, 16)
-	label.add_theme_font_size_override("font_size", 10)
-	c.add_child(label)
 
-	var check = CheckBox.new()
-	check.name = "Check"
-	check.position = Vector2(_THUMB_SIZE - 16, 2)
-	check.size = Vector2(16, 16)
-	check.focus_mode = Control.FOCUS_NONE
-	var dir = dir_name
-	check.toggled.connect(func(v): _on_slot_checked(dir, v))
-	c.add_child(check)
+func _connect_signals() -> void:
+	$LoadScreen/LoadButton.pressed.connect(_on_load_pressed)
+	$EditorScreen/TopBar/BackButton.pressed.connect(_on_back_pressed)
+	$EditorScreen/TopBar/SaveButton.pressed.connect(_on_save_pressed)
 
-	return c
+	for dir in _DIRECTIONS:
+		var check: CheckBox = _slot_check[dir]
+		var d = dir
+		check.toggled.connect(func(v): _on_slot_checked(d, v))
 
 
 # ------- actions -------
@@ -256,7 +88,6 @@ func _load_directory(path: String) -> void:
 	_tile_data.clear()
 	_tile_textures.clear()
 
-	# Scan for PNG files
 	var dir = DirAccess.open(path)
 	if dir == null:
 		return
@@ -265,26 +96,22 @@ func _load_directory(path: String) -> void:
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.ends_with(".png"):
 			var base = file_name.trim_suffix(".png")
-			# Check for existing config
 			_tile_data[base] = {
 				"texture_path": path + "/" + file_name,
 				"color": Color.WHITE,
-				"connectors": [[], [], [], []]  # N, E, S, W
+				"connectors": [[], [], [], []]
 			}
-			# Load texture
 			var tex = load(path + "/" + file_name) as Texture2D
 			if tex:
 				_tile_textures[base] = tex
 		file_name = dir.get_next()
 
-	# Try loading existing modules.json
 	var config_path = path + "/modules.json"
 	if FileAccess.file_exists(config_path):
 		_load_modules_json(config_path)
 
-	# Refresh UI
 	_refresh_tile_grids()
-	_editor_screen.get_node("DirLabel").text = path
+	_dir_label.text = path
 	_load_screen.hide()
 	_editor_screen.show()
 
@@ -310,8 +137,6 @@ func _load_modules_json(path: String) -> void:
 				else:
 					parsed.append([])
 			_tile_data[name]["connectors"] = parsed
-		if entry.has("color"):
-			_tile_data[name]["color"] = _parse_hex(entry.get("color", ""))
 		if entry.has("weight"):
 			_tile_data[name]["weight"] = entry["weight"]
 		if entry.has("rotate"):
@@ -319,12 +144,9 @@ func _load_modules_json(path: String) -> void:
 
 
 func _refresh_tile_grids() -> void:
-	# Clear
-	for c in _left_grid.get_children():
-		c.queue_free()
+	for c in _left_grid.get_children(): c.queue_free()
 	_left_items.clear()
-	for c in _right_grid.get_children():
-		c.queue_free()
+	for c in _right_grid.get_children(): c.queue_free()
 	_right_items.clear()
 
 	var names = _tile_data.keys()
@@ -340,7 +162,6 @@ func _refresh_tile_grids() -> void:
 		_right_grid.add_child(ritem)
 		_right_items[tile_name] = ritem
 
-	# Clear selection
 	_selected_main = ""
 	_selected_candidate = ""
 	_update_center()
@@ -354,10 +175,8 @@ func _make_tile_item(tile_name: String, is_right: bool) -> Control:
 
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0.15, 0.15, 0.15, 1)
-	style.border_width_left = 2
-	style.border_width_right = 2
-	style.border_width_top = 2
-	style.border_width_bottom = 2
+	style.border_width_left = 2; style.border_width_right = 2
+	style.border_width_top = 2;  style.border_width_bottom = 2
 	style.border_color = Color(0.15, 0.15, 0.15, 1)
 	panel.add_theme_stylebox_override("panel", style)
 
@@ -371,8 +190,7 @@ func _make_tile_item(tile_name: String, is_right: bool) -> Control:
 	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	rect.custom_minimum_size = Vector2(_THUMB_SIZE, _THUMB_SIZE)
 	var tex = _tile_textures.get(tile_name)
-	if tex:
-		rect.texture = tex
+	if tex: rect.texture = tex
 	vbox.add_child(rect)
 
 	var label = Label.new()
@@ -387,14 +205,12 @@ func _make_tile_item(tile_name: String, is_right: bool) -> Control:
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			_on_tile_clicked(tile_name, is_right)
 	)
-
 	return panel
 
 
 func _on_tile_clicked(tile_name: String, is_right: bool) -> void:
 	if is_right:
-		if _selected_main.is_empty():
-			return
+		if _selected_main.is_empty(): return
 		_selected_candidate = tile_name
 		_update_right_highlight()
 		_update_center()
@@ -410,61 +226,50 @@ func _on_tile_clicked(tile_name: String, is_right: bool) -> void:
 func _update_left_highlight() -> void:
 	for name in _left_items:
 		var panel = _left_items[name]
-		var style = panel.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-		if name == _selected_main:
-			style.border_color = Color(0.3, 0.7, 1.0, 1)
-		else:
-			style.border_color = Color(0.15, 0.15, 0.15, 1)
-		panel.add_theme_stylebox_override("panel", style)
+		var s = panel.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+		s.border_color = Color(0.3, 0.7, 1.0, 1) if name == _selected_main else Color(0.15, 0.15, 0.15, 1)
+		panel.add_theme_stylebox_override("panel", s)
 
 
 func _update_right_highlight() -> void:
 	for name in _right_items:
 		var panel = _right_items[name]
-		var style = panel.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
-		if name == _selected_candidate:
-			style.border_color = Color(0.3, 0.7, 1.0, 1)
-		else:
-			style.border_color = Color(0.15, 0.15, 0.15, 1)
-		panel.add_theme_stylebox_override("panel", style)
+		var s = panel.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+		s.border_color = Color(0.3, 0.7, 1.0, 1) if name == _selected_candidate else Color(0.15, 0.15, 0.15, 1)
+		panel.add_theme_stylebox_override("panel", s)
 
 
 func _update_center() -> void:
-	# Center tile
 	if _selected_main.is_empty():
-		_center_main_rect.texture = null
-		_center_main_rect.modulate = Color(0.5, 0.5, 0.5, 1)
-		_center_main_label.text = ""
+		_center_tex.texture = null
+		_center_tex.modulate = Color(0.5, 0.5, 0.5, 1)
+		_center_label.text = ""
 	else:
-		_center_main_rect.texture = _tile_textures.get(_selected_main)
-		_center_main_rect.modulate = Color.WHITE
-		_center_main_label.text = _selected_main
+		_center_tex.texture = _tile_textures.get(_selected_main)
+		_center_tex.modulate = Color.WHITE
+		_center_label.text = _selected_main
 
-	# Direction slots - fill with candidate
 	var candidate_tex = _tile_textures.get(_selected_candidate) if not _selected_candidate.is_empty() else null
 
 	for dir in _DIRECTIONS:
-		var rect: TextureRect = _slot_rects[dir]
-		var label: Label = _slot_labels[dir]
-		var check = _checks[dir]
+		var tex: TextureRect = _slot_tex[dir]
+		var label: Label = _slot_label[dir]
 		if candidate_tex:
-			rect.texture = candidate_tex
+			tex.texture = candidate_tex
 			label.text = _selected_candidate
 		else:
-			rect.texture = null
+			tex.texture = null
 			label.text = ""
-
-		# Update check state based on existing connection data
 		_update_slot_appearance(dir)
 
 
 func _update_slot_appearance(dir: String) -> void:
-	var rect: TextureRect = _slot_rects[dir]
-	var check: CheckBox = _checks[dir]
+	var tex: TextureRect = _slot_tex[dir]
+	var check: CheckBox = _slot_check[dir]
 
 	if _selected_main.is_empty() or _selected_candidate.is_empty():
 		check.button_pressed = false
-		rect.modulate = Color(0.3, 0.3, 0.3, 1)
+		tex.modulate = Color(0.3, 0.3, 0.3, 1)
 		check.visible = false
 		return
 
@@ -473,22 +278,15 @@ func _update_slot_appearance(dir: String) -> void:
 	check.set_block_signals(true)
 	check.button_pressed = connected
 	check.set_block_signals(false)
-
-	if connected:
-		rect.modulate = Color.WHITE
-	else:
-		rect.modulate = Color(0.35, 0.35, 0.35, 1)
+	tex.modulate = Color.WHITE if connected else Color(0.35, 0.35, 0.35, 1)
 
 
 func _on_slot_checked(dir: String, checked: bool) -> void:
-	if _selected_main.is_empty() or _selected_candidate.is_empty():
-		return
-
+	if _selected_main.is_empty() or _selected_candidate.is_empty(): return
 	if checked:
 		_add_connection(_selected_main, dir, _selected_candidate)
 	else:
 		_remove_connection(_selected_main, dir, _selected_candidate)
-
 	_update_slot_appearance(dir)
 	_refresh_right_colors()
 
@@ -498,16 +296,23 @@ func _update_right_enabled(enabled: bool) -> void:
 		_right_items[name].modulate = Color.WHITE if enabled else Color(0.5, 0.5, 0.5, 1)
 
 
-# ------- connection data logic -------
+func _refresh_right_colors() -> void:
+	if _selected_main.is_empty(): return
+	for name in _right_items:
+		var has_any = false
+		for dir in _DIRECTIONS:
+			if _is_connected(_selected_main, dir, name):
+				has_any = true; break
+		_right_items[name].modulate = Color.WHITE if has_any else Color(0.5, 0.5, 0.5, 1)
 
-func _get_tags(tile_name: String, dir: String) -> Array:
+
+# ------- connection data -------
+
+func _get_tags(tile: String, dir: String) -> Array:
 	var idx = _DIRECTIONS.find(dir)
-	if idx < 0:
-		return []
-	var conns: Array = _tile_data.get(tile_name, {}).get("connectors", [[], [], [], []])
-	if conns.size() != 4:
-		return []
-	return conns[idx].duplicate()
+	if idx < 0: return []
+	var conns: Array = _tile_data.get(tile, {}).get("connectors", [[],[],[],[]])
+	return conns[idx].duplicate() if conns.size() == 4 else []
 
 
 func _opposite_dir(dir: String) -> String:
@@ -522,157 +327,86 @@ func _opposite_dir(dir: String) -> String:
 func _is_connected(main: String, dir: String, candidate: String) -> bool:
 	var main_tags = _get_tags(main, dir)
 	var cand_tags = _get_tags(candidate, _opposite_dir(dir))
-	if main_tags.is_empty() or cand_tags.is_empty():
-		return false
+	if main_tags.is_empty() or cand_tags.is_empty(): return false
 	for tag in main_tags:
-		if _match_tag(tag, cand_tags):
-			return true
+		if _match_tag(tag, cand_tags): return true
 	return false
 
 
-func _match_tag(tag: String, other_tags: Array) -> bool:
-	if tag.begins_with("L"):
-		var val = tag.substr(1)
-		return ("R" + val) in other_tags
-	if tag.begins_with("R"):
-		var val = tag.substr(1)
-		return ("L" + val) in other_tags
-	return tag in other_tags
+func _match_tag(tag: String, other: Array) -> bool:
+	if tag.begins_with("L"): return ("R" + tag.substr(1)) in other
+	if tag.begins_with("R"): return ("L" + tag.substr(1)) in other
+	return tag in other
 
 
 func _next_tag_id() -> int:
 	var max_id = 0
-	for tile_name in _tile_data:
-		var conns: Array = _tile_data[tile_name].get("connectors", [])
-		for tags in conns:
+	for name in _tile_data:
+		for tags in _tile_data[name].get("connectors", []):
 			for tag in tags:
-				var s = tag as String
-				var v = s.trim_prefix("L").trim_prefix("R").to_int()
-				if v > max_id:
-					max_id = v
+				var v = (tag as String).trim_prefix("L").trim_prefix("R").to_int()
+				if v > max_id: max_id = v
 	return max_id + 1
 
 
 func _add_connection(main: String, dir: String, candidate: String) -> void:
-	if _is_connected(main, dir, candidate):
-		return
-
-	# Generate a new tag pair
+	if _is_connected(main, dir, candidate): return
 	var tag_id = _next_tag_id()
-
-	# Main tile side gets L{id}
-	var main_idx = _DIRECTIONS.find(dir)
-	var main_conns: Array = _tile_data[main]["connectors"]
-	main_conns[main_idx].append("L%d" % tag_id)
-
-	# Candidate opposite side gets R{id}
-	var opp = _opposite_dir(dir)
-	var cand_idx = _DIRECTIONS.find(opp)
-	var cand_conns: Array = _tile_data[candidate]["connectors"]
-	cand_conns[cand_idx].append("R%d" % tag_id)
+	_tile_data[main]["connectors"][_DIRECTIONS.find(dir)].append("L%d" % tag_id)
+	_tile_data[candidate]["connectors"][_DIRECTIONS.find(_opposite_dir(dir))].append("R%d" % tag_id)
 
 
 func _remove_connection(main: String, dir: String, candidate: String) -> void:
-	var main_conns: Array = _tile_data[main]["connectors"]
-	var main_idx = _DIRECTIONS.find(dir)
-	var cand_conns: Array = _tile_data[candidate]["connectors"]
-	var cand_idx = _DIRECTIONS.find(_opposite_dir(dir))
+	var mi = _DIRECTIONS.find(dir)
+	var ci = _DIRECTIONS.find(_opposite_dir(dir))
+	var mc: Array = _tile_data[main]["connectors"]
+	var cc: Array = _tile_data[candidate]["connectors"]
+	if mc.size() != 4 or cc.size() != 4: return
 
-	if main_conns.size() != 4 or cand_conns.size() != 4:
-		return
-
-	# Find and remove matching tag pair
-	var to_remove_main = ""
-	var to_remove_cand = ""
-
-	for tag in main_conns[main_idx]:
+	var rm_main = ""; var rm_cand = ""
+	for tag in mc[mi]:
 		if tag.begins_with("L"):
-			var val = tag.substr(1)
-			var check = "R" + val
-			if check in cand_conns[cand_idx]:
-				to_remove_main = tag
-				to_remove_cand = check
-				break
+			var check = "R" + tag.substr(1)
+			if check in cc[ci]: rm_main = tag; rm_cand = check; break
 		if tag.begins_with("R"):
-			var val = tag.substr(1)
-			var check = "L" + val
-			if check in cand_conns[cand_idx]:
-				to_remove_main = tag
-				to_remove_cand = check
-				break
-
-	if not to_remove_main.is_empty():
-		main_conns[main_idx].erase(to_remove_main)
-		cand_conns[cand_idx].erase(to_remove_cand)
+			var check = "L" + tag.substr(1)
+			if check in cc[ci]: rm_main = tag; rm_cand = check; break
+	if not rm_main.is_empty():
+		mc[mi].erase(rm_main)
+		cc[ci].erase(rm_cand)
 
 
-func _refresh_right_colors() -> void:
-	if _selected_main.is_empty():
-		return
-	for name in _right_items:
-		var has_any_connection := false
-		for dir in _DIRECTIONS:
-			if _is_connected(_selected_main, dir, name):
-				has_any_connection = true
-				break
-		_right_items[name].modulate = Color.WHITE if has_any_connection else Color(0.5, 0.5, 0.5, 1)
-
+# ------- save / back -------
 
 func _on_save_pressed() -> void:
-	if _dir_path.is_empty():
-		return
+	if _dir_path.is_empty(): return
 
 	var modules = []
 	for tile_name in _tile_data:
 		var data = _tile_data[tile_name]
-		var conns = data.get("connectors", [[], [], [], []])
-		var conn_strs = []
+		var conns = data.get("connectors", [[],[],[],[]])
+		var strs = []
 		for tags in conns:
 			if tags.is_empty():
-				conn_strs.append("")
+				strs.append("")
 			else:
 				var dedup = {}
-				for t in tags:
-					dedup[t] = true
-				var sorted_tags = dedup.keys()
-				sorted_tags.sort()
-				conn_strs.append(",".join(sorted_tags))
+				for t in tags: dedup[t] = true
+				var keys = dedup.keys(); keys.sort()
+				strs.append(",".join(keys))
 
-		var entry = {
-			"name": tile_name,
-			"connectors": conn_strs,
-		}
-		var col = data.get("color", Color.WHITE)
-		if col != Color.WHITE:
-			entry["color"] = "#%02x%02x%02x" % [int(col.r * 255), int(col.g * 255), int(col.b * 255)]
-		if data.has("weight"):
-			entry["weight"] = data["weight"]
-		if data.has("rotate"):
-			entry["rotate"] = data["rotate"]
+		var entry = {"name": tile_name, "connectors": strs}
+		if data.has("weight"): entry["weight"] = data["weight"]
+		if data.has("rotate"): entry["rotate"] = data["rotate"]
 		modules.append(entry)
 
-	var out = {
-		"connector_colors": {},
-		"modules": modules
-	}
-
-	var path = _dir_path + "/modules.json"
-	var file = FileAccess.open(path, FileAccess.WRITE)
+	var out = {"connector_colors": {}, "modules": modules}
+	var file = FileAccess.open(_dir_path + "/modules.json", FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(out, "\t"))
 		file.close()
-		print("WFC Editor: Saved to ", path)
 
 
 func _on_back_pressed() -> void:
 	_editor_screen.hide()
 	_load_screen.show()
-
-
-func _parse_hex(hex: String) -> Color:
-	if hex.begins_with("#") and hex.length() >= 7:
-		var r = hex.substr(1, 2).hex_to_int() / 255.0
-		var g = hex.substr(3, 2).hex_to_int() / 255.0
-		var b = hex.substr(5, 2).hex_to_int() / 255.0
-		return Color(r, g, b, 1)
-	return Color.WHITE
