@@ -46,6 +46,11 @@ static func _parse_module_entry(entry: Dictionary) -> Array[WFCModule]:
 	var connectors_data = entry.get("connectors")
 	var base_connectors := _parse_connectors(connectors_data)
 
+	var cl_data = entry.get("cl")
+	var base_cl: Array = _parse_int_array(cl_data) if cl_data is Array else []
+	var cr_data = entry.get("cr")
+	var base_cr: Array = _parse_int_array(cr_data) if cr_data is Array else []
+
 	var out: Array[WFCModule] = []
 
 	var rotation_count = 4 if rotate else 1
@@ -59,11 +64,18 @@ static func _parse_module_entry(entry: Dictionary) -> Array[WFCModule]:
 		mod.preview_color = color
 
 		var conn_dict: Dictionary = {}
+		var cl_dict: Dictionary = {}
+		var cr_dict: Dictionary = {}
 		for d in range(4):
 			var src_idx = posmod(d - r, 4)
-			var tags: Array = base_connectors[src_idx]
-			conn_dict[_DIRECTIONS[d]] = tags.duplicate()
+			conn_dict[_DIRECTIONS[d]] = base_connectors[src_idx].duplicate()
+			if base_cl.size() == 4:
+				cl_dict[_DIRECTIONS[d]] = base_cl[src_idx]
+			if base_cr.size() == 4:
+				cr_dict[_DIRECTIONS[d]] = base_cr[src_idx]
 		mod.connectors = conn_dict
+		mod.connect_id_l = cl_dict
+		mod.connect_id_r = cr_dict
 
 		out.append(mod)
 
@@ -115,6 +127,20 @@ static func _split_tags(s: String) -> Array:
 		var trimmed = p.strip_edges()
 		if not trimmed.is_empty():
 			out.append(trimmed)
+	return out
+
+static func _parse_int_array(data: Array) -> Array:
+	var out: Array = []
+	out.resize(data.size())
+	for i in range(data.size()):
+		if data[i] is int:
+			out[i] = data[i]
+		elif data[i] is float:
+			out[i] = int(data[i])
+		elif data[i] is String and not (data[i] as String).is_empty():
+			out[i] = (data[i] as String).to_int()
+		else:
+			out[i] = -1
 	return out
 
 static func _parse_color(hex: String, name: String) -> Color:

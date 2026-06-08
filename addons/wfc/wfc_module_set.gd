@@ -34,18 +34,46 @@ func build_compatibility_cache() -> void:
 	_cache_valid = true
 
 func _modules_compatible(a_idx: int, b_idx: int, direction: String) -> bool:
-	var a_tags: Array = modules[a_idx].connectors.get(direction, [])
-	var opp: String = _OPPOSITE.get(direction, "")
-	var b_tags: Array = modules[b_idx].connectors.get(opp, [])
+	var mod_a = modules[a_idx]
+	var mod_b = modules[b_idx]
+	var opp = _OPPOSITE.get(direction, "")
+
+	# If both modules have connect-id data, use directed bidirectional matching
+	if not mod_a.connect_id_l.is_empty() and not mod_b.connect_id_r.is_empty():
+		var a_l: int = mod_a.connect_id_l.get(direction, -1)
+		var a_r: int = mod_a.connect_id_r.get(direction, -1)
+		var b_l: int = mod_b.connect_id_l.get(opp, -1)
+		var b_r: int = mod_b.connect_id_r.get(opp, -1)
+		return (a_l >= 0 and b_r >= 0 and a_l == b_r) or (a_r >= 0 and b_l >= 0 and a_r == b_l)
+
+	# Fall back to connector tag matching
+	var a_tags: Array = mod_a.connectors.get(direction, [])
+	var b_tags: Array = mod_b.connectors.get(opp, [])
 
 	if a_tags.is_empty() or b_tags.is_empty():
 		return false
 
-	for tag in a_tags:
-		if tag == "*":
+	# Directional tag matching: L tags match R tags and vice versa
+	for a_tag in a_tags:
+		if a_tag == "*":
 			return true
-		if tag in b_tags:
-			return true
+		if a_tag.begins_with("L"):
+			for b_tag in b_tags:
+				if b_tag == "*":
+					return true
+				if b_tag.begins_with("R") and b_tag.substr(1) == a_tag.substr(1):
+					return true
+		elif a_tag.begins_with("R"):
+			for b_tag in b_tags:
+				if b_tag == "*":
+					return true
+				if b_tag.begins_with("L") and b_tag.substr(1) == a_tag.substr(1):
+					return true
+		else:
+			# Plain tag (no L/R prefix) — intersection matching
+			if a_tag in b_tags:
+				return true
+
 	return false
 
 func are_compatible(a_idx: int, b_idx: int, direction: String) -> bool:
