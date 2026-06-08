@@ -1,10 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://bob3aeeusem48"]
 
-[ext_resource type="Script" path="res://wfc_game.gd" id="1_game"]
+[ext_resource type="Script" uid="uid://bhvab8kxm2c2h" path="res://wfc_game.gd" id="1_game"]
 
-[node name="WFCGame" type="Node2D"]
+[node name="WFCGame" type="Node2D" unique_id=1821672822]
 script = ExtResource("1_game")
-config_path = "res://assets/Summer/modules.json"
-texture_dir = "res://assets/Summer/"
 grid_width = 12
 grid_height = 12
