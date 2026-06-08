@@ -5,6 +5,7 @@ func _ready() -> void:
 	_test_basic_solve()
 	_test_contradiction()
 	_test_preview_image()
+	_test_config_loader()
 	print("=== WFC Test Complete ===")
 
 func _test_basic_solve() -> void:
@@ -92,3 +93,44 @@ func _test_preview_image() -> void:
 	var tex = mod_set.generate_preview_image(Vector2i(4, 4), 0)
 	assert(tex != null, "Preview texture should not be null")
 	print("  Preview texture generated: %dx%d" % [tex.get_width(), tex.get_height()])
+
+func _test_config_loader() -> void:
+	print("--- Test: Config Loader (Summer modules.json) ---")
+
+	var mod_set = WFCConfigLoader.load_module_set("res://assets/Summer/modules.json")
+	assert(mod_set != null, "Module set should not be null")
+	assert(mod_set.modules.size() > 0, "Module set should have modules")
+
+	print("  Loaded %d modules from modules.json" % mod_set.modules.size())
+	for i in range(min(5, mod_set.modules.size())):
+		var m = mod_set.modules[i]
+		print("    [%d] %s  (N:%s E:%s S:%s W:%s)" % [
+			i, m.module_name,
+			",".join(m.connectors["north"]), ",".join(m.connectors["east"]),
+			",".join(m.connectors["south"]), ",".join(m.connectors["west"])
+		])
+	if mod_set.modules.size() > 5:
+		print("    ... and %d more" % (mod_set.modules.size() - 5))
+
+	# Try solving a small grid
+	var solver = WFCSolver.new()
+	solver.init(mod_set, 6, 6, false)
+	var result = solver.solve(42)
+	print("  6x6 solve: success=%s" % result.success)
+
+	if result.success:
+		# Quick adjacency check on a few cells
+		var errors := 0
+		for y in range(6):
+			for x in range(6):
+				var mid = result.get_module_at(x, y)
+				if x > 0:
+					var left = result.get_module_at(x - 1, y)
+					if not mod_set.are_compatible(mid, left, "west"):
+						errors += 1
+				if y > 0:
+					var up = result.get_module_at(x, y - 1)
+					if not mod_set.are_compatible(mid, up, "north"):
+						errors += 1
+		print("  Adjacency errors: %d" % errors)
+		assert(errors == 0, "Summer solve should have no adjacency errors")

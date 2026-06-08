@@ -1,0 +1,342 @@
+{
+  "connector_colors": {
+    "1": "#5A9E4B",
+    "2": "#7B6345",
+    "3": "#7B6345",
+    "4": "#7B6345",
+    "5": "#7B6345",
+    "6": "#7B6345",
+    "7": "#7B6345",
+    "19": "#7B6345",
+    "8": "#888888",
+    "9": "#888888",
+    "10": "#888888",
+    "11": "#4499CC",
+    "12": "#4499CC",
+    "13": "#4499CC",
+    "14": "#55AADD",
+    "15": "#4499CC",
+    "16": "#55AADD",
+    "17": "#55AADD",
+    "18": "#55AADD",
+    "20": "#4499CC",
+    "21": "#4499CC",
+    "22": "#4499CC",
+    "23": "#4499CC"
+  },
+  "modules": [
+    {
+      "name": "cliff 0",
+      "color": "#7B6345",
+      "connectors": [
+        "4,5",
+        "1",
+        "4,5",
+        "1"
+      ]
+    },
+    {
+      "name": "cliff 1",
+      "color": "#7B6345",
+      "connectors": [
+        "1",
+        "2,6",
+        "1",
+        "2,6"
+      ]
+    },
+    {
+      "name": "cliff 2",
+      "color": "#7B6345",
+      "connectors": [
+        "7,19",
+        "1",
+        "7,19",
+        "1"
+      ]
+    },
+    {
+      "name": "cliff 3",
+      "color": "#7B6345",
+      "connectors": [
+        "1",
+        "2,6",
+        "1",
+        "2,3"
+      ]
+    },
+    {
+      "name": "cliffcorner 0",
+      "color": "#9B8365",
+      "connectors": [
+        "7,19",
+        "2,6",
+        "1",
+        "1"
+      ]
+    },
+    {
+      "name": "cliffcorner 1",
+      "color": "#9B8365",
+      "connectors": [
+        "1",
+        "2,6",
+        "7,19",
+        "1"
+      ]
+    },
+    {
+      "name": "cliffcorner 2",
+      "color": "#9B8365",
+      "connectors": [
+        "1",
+        "1",
+        "4,5",
+        ""
+      ]
+    },
+    {
+      "name": "cliffcorner 3",
+      "color": "#9B8365",
+      "connectors": [
+        "4,5",
+        "1",
+        "1",
+        "2,6"
+      ]
+    },
+    {
+      "name": "cliffturn 0",
+      "color": "#8B7355",
+      "connectors": [
+        "4,5",
+        "2,3",
+        "1",
+        "1"
+      ]
+    },
+    {
+      "name": "cliffturn 1",
+      "color": "#8B7355",
+      "connectors": [
+        "1",
+        "2,6",
+        "4,5",
+        "1"
+      ]
+    },
+    {
+      "name": "cliffturn 2",
+      "color": "#8B7355",
+      "connectors": [
+        "1",
+        "1",
+        "7,19",
+        "6"
+      ]
+    },
+    {
+      "name": "cliffturn 3",
+      "color": "#8B7355",
+      "connectors": [
+        "7,19",
+        "1",
+        "1",
+        "2,3"
+      ]
+    },
+    {
+      "name": "grass 0",
+      "color": "#5A9E4B",
+      "connectors": [
+        "1",
+        "1",
+        "1",
+        "1"
+      ]
+    },
+    {
+      "name": "grasscorner",
+      "color": "#5A9E4B",
+      "connectors": [
+        "8,9",
+        "8,9",
+        "10",
+        "10"
+      ],
+      "rotate": true
+    },
+    {
+      "name": "road",
+      "color": "#888888",
+      "connectors": [
+        "8,9",
+        "10",
+        "8,9",
+        "1"
+      ],
+      "rotate": true
+    },
+    {
+      "name": "roadturn",
+      "color": "#888888",
+      "connectors": [
+        "8,9",
+        "8,9",
+        "1",
+        "1"
+      ],
+      "rotate": true
+    },
+    {
+      "name": "water_a",
+      "color": "#55AADD",
+      "connectors": [
+        "16,17",
+        "14,18",
+        "16,17",
+        "14,18"
+      ]
+    },
+    {
+      "name": "water_b",
+      "color": "#55AADD",
+      "connectors": [
+        "16,17",
+        "14,18",
+        "16,17",
+        "14,18"
+      ]
+    },
+    {
+      "name": "water_c",
+      "color": "#55AADD",
+      "connectors": [
+        "16,17",
+        "14,18",
+        "16,17",
+        "14,18"
+      ]
+    },
+    {
+      "name": "watercorner 0",
+      "color": "#4499CC",
+      "connectors": [
+        "13,15",
+        "12,20",
+        "1",
+        "1"
+      ]
+    },
+    {
+      "name": "watercorner 1",
+      "color": "#4499CC",
+      "connectors": [
+        "1",
+        "21,23",
+        "13,15",
+        "1"
+      ]
+    },
+    {
+      "name": "watercorner 2",
+      "color": "#4499CC",
+      "connectors": [
+        "1",
+        "1",
+        "11,22",
+        "21,23"
+      ]
+    },
+    {
+      "name": "watercorner 3",
+      "color": "#4499CC",
+      "connectors": [
+        "11,22",
+        "1",
+        "1",
+        "12,20"
+      ]
+    },
+    {
+      "name": "waterside 0",
+      "color": "#4499CC",
+      "connectors": [
+        "13,15",
+        "14,18",
+        "13,15",
+        "1"
+      ]
+    },
+    {
+      "name": "waterside 1",
+      "color": "#4499CC",
+      "connectors": [
+        "1",
+        "21,23",
+        "16,17",
+        "21,23"
+      ]
+    },
+    {
+      "name": "waterside 2",
+      "color": "#4499CC",
+      "connectors": [
+        "11,22",
+        "1",
+        "11,22",
+        "14,18"
+      ]
+    },
+    {
+      "name": "waterside 3",
+      "color": "#4499CC",
+      "connectors": [
+        "16,17",
+        "12,20",
+        "1",
+        "12,20"
+      ]
+    },
+    {
+      "name": "waterturn 0",
+      "color": "#3388BB",
+      "connectors": [
+        "16,17",
+        "14,18",
+        "13,15",
+        "12,20"
+      ]
+    },
+    {
+      "name": "waterturn 1",
+      "color": "#3388BB",
+      "connectors": [
+        "13,15",
+        "14,18",
+        "16,17",
+        "21,23"
+      ]
+    },
+    {
+      "name": "waterturn 2",
+      "color": "#3388BB",
+      "connectors": [
+        "11,22",
+        "21,23",
+        "16,17",
+        "14,18"
+      ]
+    },
+    {
+      "name": "waterturn 3",
+      "color": "#3388BB",
+      "connectors": [
+        "16,17",
+        "12,20",
+        "11,22",
+        "14,18"
+      ]
+    }
+  ]
+}

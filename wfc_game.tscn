@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://wfc_game.gd" id="1_game"]
+
+[node name="WFCGame" type="Node2D"]
+script = ExtResource("1_game")
+config_path = "res://assets/Summer/modules.json"
+texture_dir = "res://assets/Summer/"
+grid_width = 12
+grid_height = 12
