@@ -152,6 +152,8 @@ func _refresh_tile_grids() -> void:
 	_right.populate(names, _tile_textures)
 	_selected_main = ""; _selected_candidate = ""
 	_center.set_main("", null)
+	_center.clear_candidate()
+	_center.reset_slots()
 	_center.hide_rotations()
 
 
