@@ -115,15 +115,20 @@ func _load_modules_json(path: String) -> void:
 	for entry in json["modules"]:
 		var name = entry.get("name", "")
 		if not _tile_data.has(name): continue
-		var connectors = entry.get("connectors", [])
-		if connectors is Array and connectors.size() == 4:
-			var parsed = []
-			for s in connectors:
-				if s is String and not s.is_empty():
-					parsed.append(s.split(",", false))
-				else:
-					parsed.append([])
-			_tile_data[name]["connectors"] = parsed
+
+		# Parse cl/cr into internal tag format
+		var cl = entry.get("cl", [])
+		var cr = entry.get("cr", [])
+		if cl is Array and cr is Array and cl.size() == 4 and cr.size() == 4:
+			var tags: Array = []
+			tags.resize(4)
+			for i in range(4):
+				var side_tags: Array = []
+				if cl[i] >= 0: side_tags.append("L%d" % cl[i])
+				if cr[i] >= 0: side_tags.append("R%d" % cr[i])
+				tags[i] = side_tags
+			_tile_data[name]["connectors"] = tags
+
 		if entry.has("weight"): _tile_data[name]["weight"] = entry["weight"]
 		if entry.has("rotate"): _tile_data[name]["rotate"] = entry["rotate"]
 
@@ -367,14 +372,17 @@ func _on_save_pressed() -> void:
 	var modules = []
 	for tile_name in _tile_data:
 		var data = _tile_data[tile_name]
-		var conns = data.get("connectors", [[],[],[],[]])
-		var strs = []
-		for tags in conns:
-			if tags.is_empty(): strs.append("")
-			else:
-				var dedup = {}; for t in tags: dedup[t] = true
-				var keys = dedup.keys(); keys.sort(); strs.append(",".join(keys))
-		var entry = {"name": tile_name, "connectors": strs}
+		var tags_per_side = data.get("connectors", [[],[],[],[]])
+		var cl = [-1, -1, -1, -1]
+		var cr = [-1, -1, -1, -1]
+		for i in range(4):
+			for tag in tags_per_side[i]:
+				if tag.begins_with("L"):
+					cl[i] = tag.substr(1).to_int()
+				elif tag.begins_with("R"):
+					cr[i] = tag.substr(1).to_int()
+
+		var entry = {"name": tile_name, "cl": cl, "cr": cr}
 		if data.has("weight"): entry["weight"] = data["weight"]
 		if data.has("rotate"): entry["rotate"] = data["rotate"]
 		modules.append(entry)
