@@ -17,6 +17,10 @@ func _ready() -> void:
 	_grid = $Scroll/Grid
 
 
+func set_columns(count: int) -> void:
+	_grid.columns = clampi(count, 1, 5)
+
+
 func populate(tiles: Array, textures: Dictionary) -> void:
 	_clear()
 	_selected = ""

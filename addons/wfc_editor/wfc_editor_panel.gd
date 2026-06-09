@@ -60,6 +60,8 @@ func _connect_signals() -> void:
 	$LoadScreen/LoadButton.pressed.connect(_on_load_pressed)
 	$EditorScreen/TopBar/BackButton.pressed.connect(_on_back_pressed)
 	$EditorScreen/TopBar/SaveButton.pressed.connect(_on_save_pressed)
+	$EditorScreen/TopBar/LeftCols.value_changed.connect(func(v): _left.set_columns(v as int))
+	$EditorScreen/TopBar/RightCols.value_changed.connect(func(v): _right.set_columns(v as int))
 
 
 # ------- actions -------

@@ -56,6 +56,30 @@ size_flags_horizontal = 3
 text = "未选择目录"
 vertical_alignment = 1
 
+[node name="LColLabel" type="Label" parent="EditorScreen/TopBar"]
+layout_mode = 2
+text = "左列:"
+vertical_alignment = 1
+
+[node name="LeftCols" type="SpinBox" parent="EditorScreen/TopBar"]
+layout_mode = 2
+min_value = 1.0
+max_value = 5.0
+value = 2.0
+rounded = true
+
+[node name="RColLabel" type="Label" parent="EditorScreen/TopBar"]
+layout_mode = 2
+text = "右列:"
+vertical_alignment = 1
+
+[node name="RightCols" type="SpinBox" parent="EditorScreen/TopBar"]
+layout_mode = 2
+min_value = 1.0
+max_value = 5.0
+value = 2.0
+rounded = true
+
 [node name="SaveButton" type="Button" parent="EditorScreen/TopBar" unique_id=1697455110]
 layout_mode = 2
 text = "保存配置"
