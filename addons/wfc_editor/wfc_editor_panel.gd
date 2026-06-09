@@ -206,6 +206,7 @@ func _on_slot_checked(dir: String, checked: bool) -> void:
 		_add_connection_variant(_selected_main, dir, _selected_candidate)
 	else:
 		_remove_connection_variant(_selected_main, dir, _selected_candidate)
+	_center.set_slot_connected(dir, checked)
 	_refresh_right_colors()
 	_mark_dirty()
 
