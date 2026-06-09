@@ -8,7 +8,7 @@ extends Node2D
 @export var rng_seed: int = -1
 @export var periodic: bool = false
 @export var cell_pixels: int = 48
-@export var config_path: String = "res://assets/Village/modules.json"
+@export var config_path: String = "res://assets/test/modules.json"
 
 var _texture_dir: String = ""
 var _tile_map: TileMapLayer
@@ -114,6 +114,20 @@ func _generate() -> void:
 	_result = solver.solve(rng_seed)
 	if not _result.success:
 		push_warning("WFCGame: Generation failed")
+		if not _result.success:
+			var f = FileAccess.open("user://wfc_game.log", FileAccess.WRITE)
+			if f:
+				f.store_string("Generation failed: %dx%d, %d modules\n" % [grid_width, grid_height, module_set.modules.size()])
+				for i in range(module_set.modules.size()):
+					var m = module_set.modules[i]
+					f.store_string("  [%d] %s: N(L%d,R%d) E(L%d,R%d) S(L%d,R%d) W(L%d,R%d)\n" % [
+						i, m.module_name,
+						m.connect_id_l.get("north", -1), m.connect_id_r.get("north", -1),
+						m.connect_id_l.get("east", -1), m.connect_id_r.get("east", -1),
+						m.connect_id_l.get("south", -1), m.connect_id_r.get("south", -1),
+						m.connect_id_l.get("west", -1), m.connect_id_r.get("west", -1),
+					])
+				f.close()
 		return
 	_apply_result()
 

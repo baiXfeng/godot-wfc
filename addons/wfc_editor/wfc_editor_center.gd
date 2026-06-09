@@ -4,6 +4,7 @@ extends CenterContainer
 
 signal slot_checked(dir: String, checked: bool)
 signal rotation_toggled(deg: int, enabled: bool)
+signal weight_changed(value: float)
 
 const _SLOT_SCENE = preload("res://addons/wfc_editor/wfc_tile_slot.tscn")
 const _DIRECTIONS = ["north", "east", "south", "west"]
@@ -46,6 +47,7 @@ func _connect_rotation_signals() -> void:
 	$Inner/RotBar/Check90.toggled.connect(func(v): rotation_toggled.emit(90, v))
 	$Inner/RotBar/Check180.toggled.connect(func(v): rotation_toggled.emit(180, v))
 	$Inner/RotBar/Check270.toggled.connect(func(v): rotation_toggled.emit(270, v))
+	$Inner/RotBar/WeightEdit.value_changed.connect(func(v): weight_changed.emit(v))
 
 
 ## Show rotation checkboxes with given states. [rotations] e.g. [1, 3]
@@ -61,6 +63,12 @@ func show_rotations(rotations: Array) -> void:
 
 func hide_rotations() -> void:
 	$Inner/RotBar.hide()
+
+
+func set_weight(value: float) -> void:
+	$Inner/RotBar/WeightEdit.set_block_signals(true)
+	$Inner/RotBar/WeightEdit.value = value
+	$Inner/RotBar/WeightEdit.set_block_signals(false)
 
 
 func set_main(tile_name: String, texture: Texture2D) -> void:

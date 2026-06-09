@@ -4,5 +4,4 @@
 
 [node name="WFCGame" type="Node2D" unique_id=1821672822]
 script = ExtResource("1_game")
-grid_width = 20
-grid_height = 20
+config_path = "res://assets/Summer/modules.json"

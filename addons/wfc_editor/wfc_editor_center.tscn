@@ -17,6 +17,13 @@ layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
 
+[node name="WeightEdit" type="SpinBox" parent="Inner/RotBar"]
+layout_mode = 2
+min_value = 0.1
+max_value = 1000.0
+value = 1.0
+step = 0.1
+
 [node name="Check90" type="CheckBox" parent="Inner/RotBar" unique_id=1519975425]
 layout_mode = 2
 text = "90°"

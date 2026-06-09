@@ -59,6 +59,7 @@ func _instantiate_columns() -> void:
 	_right.tile_selected.connect(_on_candidate_selected)
 	_center.slot_checked.connect(_on_slot_checked)
 	_center.rotation_toggled.connect(_on_rotation_toggled)
+	_center.weight_changed.connect(_on_weight_changed)
 
 
 func _connect_signals() -> void:
@@ -167,6 +168,8 @@ func _on_main_selected(tile_name: String) -> void:
 
 	var rot_data = _get_rotations(tile_name)
 	_center.show_rotations(rot_data)
+	var w = _tile_data.get(tile_name, {}).get("weight", 1.0)
+	_center.set_weight(w as float)
 	_populate_right_with_rotations()
 
 	if _get_base_name(_selected_candidate) == _selected_candidate:
@@ -235,6 +238,12 @@ func _on_rotation_toggled(deg: int, enabled: bool) -> void:
 				_selected_candidate = ""
 				_center.clear_candidate(); _center.reset_slots()
 	_refresh_right_colors()
+	_mark_dirty()
+
+
+func _on_weight_changed(value: float) -> void:
+	if _selected_main.is_empty(): return
+	_tile_data[_selected_main]["weight"] = value
 	_mark_dirty()
 
 
@@ -446,6 +455,7 @@ func _show_save_dialog() -> void:
 	dlg.dialog_text = "你有未保存的更改，是否保存后再返回？"
 	dlg.ok_button_text = "保存并退出"
 	dlg.cancel_button_text = "忽略并退出"
+	dlg.add_button("关闭", false, "close")
 	dlg.confirmed.connect(func():
 		_on_save_pressed()
 		_do_back()
@@ -453,6 +463,9 @@ func _show_save_dialog() -> void:
 	)
 	dlg.canceled.connect(func():
 		_do_back()
+		dlg.queue_free()
+	)
+	dlg.custom_action.connect(func(action):
 		dlg.queue_free()
 	)
 	add_child(dlg)

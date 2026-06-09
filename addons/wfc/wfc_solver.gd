@@ -7,6 +7,9 @@ signal propagation_finished(affected_count: int)
 signal generation_finished(result: WFCSolverResult)
 signal contradiction(x: int, y: int)
 
+const DEBUG_LOG := false
+const _LOG_PATH := "user://wfc_solver.log"
+
 var _module_set: WFCModuleSet
 var _width: int
 var _height: int
@@ -19,6 +22,8 @@ var _entropy: PackedFloat64Array
 
 var _rng: RandomNumberGenerator
 var _module_count: int
+var _step_count: int = 0
+var _last_contradiction: Dictionary = {}
 
 const _DIRECTIONS: Array[String] = ["north", "east", "south", "west"]
 const _DX: Dictionary = {"north": 0, "east": 1, "south": 0, "west": -1}
@@ -43,9 +48,11 @@ func solve(seed: int = -1) -> WFCSolverResult:
 	else:
 		_rng.randomize()
 
+	_slog("=== solve start seed=%d grid=%dx%d modules=%d ===" % [_rng.seed, _width, _height, _module_count])
 	generation_started.emit()
 	_initialize_wave()
 	var result = _run()
+	_slog("=== solve end success=%s ===" % result.success)
 	generation_finished.emit(result)
 	return result
 
@@ -94,6 +101,7 @@ func _calc_shannon_entropy(cell_idx: int) -> float:
 	return entropy
 
 func _run() -> WFCSolverResult:
+	_step_count = 0
 	while true:
 		var cell = _find_lowest_entropy_cell()
 		if cell < 0:
@@ -102,6 +110,13 @@ func _run() -> WFCSolverResult:
 		var possible: Array = _wave[cell]
 		if possible.is_empty():
 			var xy = _idx_to_xy(cell)
+			_last_contradiction = {
+				"cell": xy,
+				"from_cell": Vector2i(-1, -1),
+				"direction": "",
+				"step": _step_count,
+			}
+			_slog("contradiction at (%d,%d) step=%d" % [xy.x, xy.y, _step_count])
 			contradiction.emit(xy.x, xy.y)
 			return _make_result(false)
 
@@ -148,6 +163,8 @@ func _observe(cell_idx: int) -> void:
 	_entropy[cell_idx] = 0.0
 
 	var xy = _idx_to_xy(cell_idx)
+	_step_count += 1
+	_slog("step=%d observe (%d,%d) module=%d (%d possible)" % [_step_count, xy.x, xy.y, chosen, possible.size()])
 	cell_collapsed.emit(xy.x, xy.y, chosen)
 
 func _propagate(start_cell: int) -> bool:
@@ -189,6 +206,14 @@ func _propagate(start_cell: int) -> bool:
 				_wave[ni] = new_wave
 
 				if new_wave.is_empty():
+					_last_contradiction = {
+						"cell": Vector2i(nx, ny),
+						"from_cell": xy,
+						"direction": dir,
+						"from_modules": _wave[cell].duplicate(),
+						"from_collapsed": _observed[cell],
+						"step": _step_count,
+					}
 					contradiction.emit(nx, ny)
 					return false
 
@@ -219,3 +244,42 @@ func _idx_to_xy(idx: int) -> Vector2i:
 
 func _xy_to_idx(x: int, y: int) -> int:
 	return y * _width + x
+
+
+# ------- static verification -------
+
+## Try [attempts] random seeds on [module_set] at [width]x[height].
+## Returns a Dictionary {seeds: int, successes: int, first_fail_seed: int}
+static func verify(module_set: WFCModuleSet, width: int = 10, height: int = 10, attempts: int = 20) -> Dictionary:
+	var success := 0
+	var first_fail := -1
+	var first_diag: Dictionary = {}
+	for i in range(attempts):
+		var solver = WFCSolver.new()
+		solver.init(module_set, width, height, false)
+		var result = solver.solve(-1)
+		if result.success:
+			success += 1
+		elif first_fail < 0:
+			first_fail = i
+			first_diag = solver._last_contradiction.duplicate()
+			# Resolve module names
+			if first_diag.has("from_cell") and first_diag["from_cell"].x >= 0:
+				var fc = first_diag["from_cell"] as Vector2i
+				var mods = first_diag.get("from_modules", [])
+				var names = []
+				for mid in mods:
+					names.append(module_set.modules[mid].module_name)
+				first_diag["from_module_names"] = names
+			if first_diag.has("from_collapsed") and first_diag["from_collapsed"] >= 0:
+				first_diag["from_module_name"] = module_set.modules[first_diag["from_collapsed"]].module_name
+	return {"attempts": attempts, "successes": success, "first_fail": first_fail, "first_contradiction": first_diag}
+
+
+func _slog(msg: String) -> void:
+	if not DEBUG_LOG: return
+	var f = FileAccess.open(_LOG_PATH, FileAccess.READ_WRITE)
+	if f:
+		f.seek_end()
+		f.store_line(msg)
+		f.close()
