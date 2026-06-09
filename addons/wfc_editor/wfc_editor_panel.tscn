@@ -10,6 +10,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+size_flags_vertical = 3
 script = ExtResource("1_script")
 
 [node name="LoadScreen" type="Control" parent="." unique_id=230011817]
@@ -33,6 +34,7 @@ grow_vertical = 2
 text = "加载图块配置"
 
 [node name="EditorScreen" type="VBoxContainer" parent="." unique_id=102411709]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

@@ -15,6 +15,10 @@ run/main_scene="res://wfc_game.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/script-ide/plugin.cfg", "res://addons/wfc_editor/plugin.cfg")
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
