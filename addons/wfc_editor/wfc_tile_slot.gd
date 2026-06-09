@@ -29,7 +29,7 @@ func _ready() -> void:
 	_label = Label.new()
 	_label.name = "Label"
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_label.add_theme_font_size_override("font_size", 10 if not is_center else 12)
+	_label.add_theme_font_size_override("font_size", 12)
 	_label.clip_text = true
 	add_child(_label)
 
@@ -71,7 +71,7 @@ func set_check_state(v: bool) -> void:
 
 
 func _size_for(center: bool) -> Vector2:
-	return Vector2(144, 144) if center else Vector2(72, 84)
+	return Vector2(180, 180)
 
 
 func _update_layout() -> void:

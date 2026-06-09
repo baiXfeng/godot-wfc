@@ -12,6 +12,6 @@ theme_override_constants/separation = 4
 [node name="CrossGrid" type="GridContainer" parent="."]
 layout_mode = 2
 columns = 3
-alignment = 1
+size_flags_vertical = 4
 theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4

@@ -60,7 +60,7 @@ func _make_dir_slot() -> WfcTileSlot:
 
 func _add_spacer() -> void:
 	var c = Control.new()
-	c.custom_minimum_size = Vector2(72, 84)
+	c.custom_minimum_size = Vector2(180, 180)
 	_grid.add_child(c)
 
 
