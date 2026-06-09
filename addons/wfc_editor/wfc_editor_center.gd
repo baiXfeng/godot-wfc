@@ -1,6 +1,6 @@
 @tool
 class_name WFCEditorCenter
-extends VBoxContainer
+extends CenterContainer
 
 ## Emitted when a direction-slot checkbox is toggled.
 signal slot_checked(dir: String, checked: bool)
