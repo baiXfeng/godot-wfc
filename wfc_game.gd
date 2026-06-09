@@ -3,14 +3,14 @@ class_name WFCGame
 extends Node2D
 
 @export var module_set: WFCModuleSet
-@export var grid_width: int = 10
-@export var grid_height: int = 10
+@export var grid_width: int = 15
+@export var grid_height: int = 15
 @export var rng_seed: int = -1
 @export var periodic: bool = false
 @export var cell_pixels: int = 48
-@export var config_path: String = "res://assets/Summer/modules.json"
-@export var texture_dir: String = "res://assets/Summer/"
+@export var config_path: String = "res://assets/Village/modules.json"
 
+var _texture_dir: String = ""
 var _tile_map: TileMapLayer
 var _result: WFCSolverResult
 var _tile_source_id: int = -1
@@ -29,6 +29,7 @@ func _ready() -> void:
 		push_error("WFCGame: No module_set available")
 		return
 
+	_texture_dir = config_path.get_base_dir() + "/"
 	_build_tile_set()
 	_generate()
 
@@ -77,10 +78,10 @@ func _texture_path_for_module(module_name: String) -> String:
 		var suffix = module_name.substr(last_underscore + 1)
 		if suffix == "0" or suffix == "1" or suffix == "2" or suffix == "3":
 			var possible_base = module_name.substr(0, last_underscore)
-			var test_path = texture_dir + possible_base + ".png"
+			var test_path = _texture_dir + possible_base + ".png"
 			if FileAccess.file_exists(test_path):
 				base = possible_base
-	return texture_dir + base + ".png"
+	return _texture_dir + base + ".png"
 
 
 func _get_module_rotation(module_name: String) -> int:
@@ -89,7 +90,7 @@ func _get_module_rotation(module_name: String) -> int:
 		var suffix = module_name.substr(last_underscore + 1)
 		if suffix == "0" or suffix == "1" or suffix == "2" or suffix == "3":
 			var possible_base = module_name.substr(0, last_underscore)
-			var test_path = texture_dir + possible_base + ".png"
+			var test_path = _texture_dir + possible_base + ".png"
 			if FileAccess.file_exists(test_path):
 				return suffix.to_int()
 	return 0
