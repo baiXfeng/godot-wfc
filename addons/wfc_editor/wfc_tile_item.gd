@@ -22,10 +22,11 @@ func set_highlight(on: bool) -> void:
 
 func set_count(count: int) -> void:
 	if count > 0:
-		$VBox/Label.text = str(count)
+		$VBox/Tex/CountLabel.text = str(count)
+		$VBox/Tex/CountLabel.show()
 		modulate = Color.WHITE
 	else:
-		$VBox/Label.text = ""
+		$VBox/Tex/CountLabel.hide()
 		modulate = Color(0.5, 0.5, 0.5, 1)
 
 
