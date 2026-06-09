@@ -44,12 +44,16 @@ func _build_tile_set() -> void:
 	atlas_image.fill(Color.TRANSPARENT)
 
 	for i in range(module_count):
-		var tex_path = _texture_path_for_module(module_set.modules[i].module_name)
+		var mod_name = module_set.modules[i].module_name
+		var tex_path = _texture_path_for_module(mod_name)
 		var img = _load_image(tex_path)
 		if img == null:
 			continue
 		if img.get_width() != cell_pixels or img.get_height() != cell_pixels:
 			img.resize(cell_pixels, cell_pixels, Image.INTERPOLATE_NEAREST)
+		var rot = _get_module_rotation(mod_name)
+		for _r in range(rot):
+			img.rotate_90(CLOCKWISE)
 		atlas_image.blit_rect(img, Rect2i(0, 0, cell_pixels, cell_pixels), Vector2i(i * cell_pixels, 0))
 
 	var atlas_texture = ImageTexture.create_from_image(atlas_image)
@@ -77,6 +81,18 @@ func _texture_path_for_module(module_name: String) -> String:
 			if FileAccess.file_exists(test_path):
 				base = possible_base
 	return texture_dir + base + ".png"
+
+
+func _get_module_rotation(module_name: String) -> int:
+	var last_underscore = module_name.rfind("_")
+	if last_underscore > 0:
+		var suffix = module_name.substr(last_underscore + 1)
+		if suffix == "0" or suffix == "1" or suffix == "2" or suffix == "3":
+			var possible_base = module_name.substr(0, last_underscore)
+			var test_path = texture_dir + possible_base + ".png"
+			if FileAccess.file_exists(test_path):
+				return suffix.to_int()
+	return 0
 
 func _load_image(path: String) -> Image:
 	if not FileAccess.file_exists(path):
