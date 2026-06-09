@@ -20,6 +20,15 @@ func set_highlight(on: bool) -> void:
 	add_theme_stylebox_override("panel", s)
 
 
+func set_count(count: int) -> void:
+	if count > 0:
+		$VBox/Label.text = str(count)
+		modulate = Color.WHITE
+	else:
+		$VBox/Label.text = ""
+		modulate = Color(0.5, 0.5, 0.5, 1)
+
+
 func _on_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		pressed.emit()

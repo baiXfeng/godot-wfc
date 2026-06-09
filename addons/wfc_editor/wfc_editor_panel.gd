@@ -143,12 +143,16 @@ func _refresh_tile_grids() -> void:
 
 func _on_main_selected(tile_name: String) -> void:
 	_selected_main = tile_name
-	_selected_candidate = ""
 	_left.highlight(tile_name)
 	_center.set_main(tile_name, _tile_textures.get(tile_name))
-	_center.clear_candidate()
-	_center.reset_slots()
 	_right.set_enabled(true)
+
+	if _selected_candidate.is_empty():
+		_center.clear_candidate()
+		_center.reset_slots()
+	else:
+		_on_candidate_selected(_selected_candidate)
+
 	_refresh_right_colors()
 
 
@@ -176,10 +180,11 @@ func _refresh_right_colors() -> void:
 	if _selected_main.is_empty(): return
 	var names = _tile_data.keys()
 	for name in names:
-		var has = false
+		var count := 0
 		for dir in _DIRECTIONS:
-			if _is_connected(_selected_main, dir, name): has = true; break
-		_right.set_connected(name, has)
+			if _is_connected(_selected_main, dir, name):
+				count += 1
+		_right.set_connection_count(name, count)
 
 
 # ------- data logic -------

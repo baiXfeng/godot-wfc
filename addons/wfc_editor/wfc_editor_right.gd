@@ -37,9 +37,9 @@ func highlight(tile_name: String) -> void:
 		_items[name].set_highlight(name == tile_name)
 
 
-func set_connected(tile_name: String, connected: bool) -> void:
+func set_connection_count(tile_name: String, count: int) -> void:
 	if not _items.has(tile_name): return
-	_items[tile_name].modulate = Color.WHITE if connected else Color(0.5, 0.5, 0.5, 1)
+	_items[tile_name].set_count(count)
 
 
 func _set_enabled(enabled: bool) -> void:
