@@ -29,6 +29,8 @@ func _test_panel_instantiation() -> void:
 		"Right tile_selected should be connected")
 	assert(panel._center.slot_checked.is_connected(panel._on_slot_checked),
 		"Center slot_checked should be connected")
+	assert(panel._center.rotation_toggled.is_connected(panel._on_rotation_toggled),
+		"Center rotation_toggled should be connected")
 
 	remove_child(panel); panel.queue_free()
 	print("  OK - panel instantiated, columns loaded, signals connected")
@@ -38,34 +40,34 @@ func _test_connection_logic() -> void:
 	print("--- Connection Logic ---")
 	var panel = _make_panel_with_test_data()
 
-	assert(not panel._is_connected("grass", "north", "water"),
+	assert(not panel._is_connected_variant("grass", "north", "water"),
 		"Should not be connected initially")
-	assert(not panel._is_connected("grass", "east", "water"),
+	assert(not panel._is_connected_variant("grass", "east", "water"),
 		"Should not be connected initially")
 
 	# Add connection
-	panel._add_connection("grass", "north", "water")
-	assert(panel._is_connected("grass", "north", "water"),
+	panel._add_connection_variant("grass", "north", "water")
+	assert(panel._is_connected_variant("grass", "north", "water"),
 		"Should be connected after add")
-	assert(panel._is_connected("water", "south", "grass"),
+	assert(panel._is_connected_variant("water", "south", "grass"),
 		"Bidirectional: water south should connect to grass")
-	assert(not panel._is_connected("grass", "east", "water"),
+	assert(not panel._is_connected_variant("grass", "east", "water"),
 		"Only north should be connected, not east")
 
 	# Add another connection on same side
-	panel._add_connection("grass", "north", "sand")
-	assert(panel._is_connected("grass", "north", "sand"),
+	panel._add_connection_variant("grass", "north", "sand")
+	assert(panel._is_connected_variant("grass", "north", "sand"),
 		"Should connect to sand too")
-	assert(panel._is_connected("grass", "north", "water"),
+	assert(panel._is_connected_variant("grass", "north", "water"),
 		"Water connection should remain")
 
 	# Remove connection
-	panel._remove_connection("grass", "north", "water")
-	assert(not panel._is_connected("grass", "north", "water"),
+	panel._remove_connection_variant("grass", "north", "water")
+	assert(not panel._is_connected_variant("grass", "north", "water"),
 		"Should be disconnected after remove")
-	assert(panel._is_connected("grass", "north", "sand"),
+	assert(panel._is_connected_variant("grass", "north", "sand"),
 		"Sand connection should remain")
-	assert(not panel._is_connected("water", "south", "grass"),
+	assert(not panel._is_connected_variant("water", "south", "grass"),
 		"Bidirectional: water south should also disconnect")
 
 	# Tag format verification
@@ -82,9 +84,9 @@ func _test_connection_logic() -> void:
 func _test_save_load_roundtrip() -> void:
 	print("--- Save/Load Roundtrip ---")
 	var panel = _make_panel_with_test_data()
-	panel._add_connection("grass", "north", "water")
-	panel._add_connection("grass", "east", "sand")
-	panel._add_connection("water", "south", "sand")
+	panel._add_connection_variant("grass", "north", "water")
+	panel._add_connection_variant("grass", "east", "sand")
+	panel._add_connection_variant("water", "south", "sand")
 
 	var temp_dir = "user://test_wfc_editor"
 	DirAccess.make_dir_recursive_absolute(temp_dir)
@@ -97,13 +99,13 @@ func _test_save_load_roundtrip() -> void:
 	var panel2 = _make_panel_with_test_data()
 	panel2._load_modules_json(temp_dir + "/modules.json")
 
-	assert(panel2._is_connected("grass", "north", "water"),
+	assert(panel2._is_connected_variant("grass", "north", "water"),
 		"Grass north -> water should survive roundtrip")
-	assert(panel2._is_connected("grass", "east", "sand"),
+	assert(panel2._is_connected_variant("grass", "east", "sand"),
 		"Grass east -> sand should survive roundtrip")
-	assert(panel2._is_connected("water", "south", "sand"),
+	assert(panel2._is_connected_variant("water", "south", "sand"),
 		"Water south -> sand should survive roundtrip")
-	assert(not panel2._is_connected("grass", "south", "water"),
+	assert(not panel2._is_connected_variant("grass", "south", "water"),
 		"Non-connected direction should remain unconnected")
 
 	DirAccess.remove_absolute(temp_dir + "/modules.json")
@@ -137,10 +139,10 @@ func _test_grid_refresh() -> void:
 
 	# Toggle a connection via the slot checked handler
 	panel._on_slot_checked("north", true)
-	assert(panel._is_connected("grass", "north", "water"),
+	assert(panel._is_connected_variant("grass", "north", "water"),
 		"Connection should be established")
 	panel._on_slot_checked("north", false)
-	assert(not panel._is_connected("grass", "north", "water"),
+	assert(not panel._is_connected_variant("grass", "north", "water"),
 		"Connection should be removed")
 
 	remove_child(panel); panel.queue_free()

@@ -140,7 +140,11 @@
         "L10,R10",
         "L10,R10"
       ],
-      "rotate": true
+      "rotate": [
+        1,
+        2,
+        3
+      ]
     },
     {
       "name": "road",
@@ -151,7 +155,11 @@
         "L1,R1",
         "L8,R9"
       ],
-      "rotate": true
+      "rotate": [
+        1,
+        2,
+        3
+      ]
     },
     {
       "name": "roadturn",
@@ -162,7 +170,11 @@
         "L1,R1",
         "L1,R1"
       ],
-      "rotate": true
+      "rotate": [
+        1,
+        2,
+        3
+      ]
     },
     {
       "name": "water_a",

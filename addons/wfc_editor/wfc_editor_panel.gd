@@ -52,6 +52,7 @@ func _instantiate_columns() -> void:
 	_left.tile_selected.connect(_on_main_selected)
 	_right.tile_selected.connect(_on_candidate_selected)
 	_center.slot_checked.connect(_on_slot_checked)
+	_center.rotation_toggled.connect(_on_rotation_toggled)
 
 
 func _connect_signals() -> void:
@@ -77,11 +78,8 @@ func _on_load_pressed() -> void:
 
 
 func _load_directory(path: String) -> void:
-	_dir_path = path
-	_last_dir = path
-	_save_prefs()
-	_tile_data.clear()
-	_tile_textures.clear()
+	_dir_path = path; _last_dir = path; _save_prefs()
+	_tile_data.clear(); _tile_textures.clear()
 
 	var dir = DirAccess.open(path)
 	if dir == null: return
@@ -99,14 +97,12 @@ func _load_directory(path: String) -> void:
 			if tex: _tile_textures[base] = tex
 		file_name = dir.get_next()
 
-	var config_path = path + "/modules.json"
-	if FileAccess.file_exists(config_path):
-		_load_modules_json(config_path)
+	if FileAccess.file_exists(path + "/modules.json"):
+		_load_modules_json(path + "/modules.json")
 
 	_refresh_tile_grids()
 	_dir_label.text = path
-	_load_screen.hide()
-	_editor_screen.show()
+	_load_screen.hide(); _editor_screen.show()
 
 
 func _load_modules_json(path: String) -> void:
@@ -137,6 +133,7 @@ func _refresh_tile_grids() -> void:
 	_right.populate(names, _tile_textures)
 	_selected_main = ""; _selected_candidate = ""
 	_center.set_main("", null)
+	_center.hide_rotations()
 
 
 # ------- event handling -------
@@ -147,11 +144,18 @@ func _on_main_selected(tile_name: String) -> void:
 	_center.set_main(tile_name, _tile_textures.get(tile_name))
 	_right.set_enabled(true)
 
-	if _selected_candidate.is_empty():
-		_center.clear_candidate()
-		_center.reset_slots()
+	var rot_data = _get_rotations(tile_name)
+	_center.show_rotations(rot_data)
+	_populate_right_with_rotations()
+
+	if _get_base_name(_selected_candidate) == _selected_candidate:
+		# candidate is a base name, re-apply
+		if not _selected_candidate.is_empty():
+			_on_candidate_selected(_selected_candidate)
+		else:
+			_center.clear_candidate(); _center.reset_slots()
 	else:
-		_on_candidate_selected(_selected_candidate)
+		_center.clear_candidate(); _center.reset_slots()
 
 	_refresh_right_colors()
 
@@ -160,56 +164,131 @@ func _on_candidate_selected(tile_name: String) -> void:
 	if _selected_main.is_empty(): return
 	_selected_candidate = tile_name
 	_right.highlight(tile_name)
-	_center.set_candidate(tile_name, _tile_textures.get(tile_name))
+
+	var info = _resolve_variant(tile_name)
+	var base = info["base"]; var rot = info["rotation"]
+	var tex = _tile_textures.get(base)
+
+	_center.set_candidate(tile_name, tex, rot)
 
 	for dir in _DIRECTIONS:
-		var connected = _is_connected(_selected_main, dir, _selected_candidate)
+		var connected = _is_connected_variant(_selected_main, dir, tile_name)
 		_center.set_slot_connected(dir, connected)
 
 
 func _on_slot_checked(dir: String, checked: bool) -> void:
 	if _selected_main.is_empty() or _selected_candidate.is_empty(): return
 	if checked:
-		_add_connection(_selected_main, dir, _selected_candidate)
+		_add_connection_variant(_selected_main, dir, _selected_candidate)
 	else:
-		_remove_connection(_selected_main, dir, _selected_candidate)
+		_remove_connection_variant(_selected_main, dir, _selected_candidate)
+	_refresh_right_colors()
+
+
+func _on_rotation_toggled(deg: int, enabled: bool) -> void:
+	if _selected_main.is_empty(): return
+	var data = _tile_data[_selected_main]
+	var rots: Array = data.get("rotate", [])
+	if enabled:
+		var r = deg / 90
+		if not rots.has(r): rots.append(r); rots.sort()
+	else:
+		var r = deg / 90; rots.erase(r)
+	if rots.is_empty():
+		data.erase("rotate")
+	else:
+		data["rotate"] = rots
+
+	_populate_right_with_rotations()
+	if not _selected_candidate.is_empty():
+		if _get_base_name(_selected_candidate) == _selected_candidate:
+			_on_candidate_selected(_selected_candidate)
+		else:
+			# Candidate was a rotated variant that may have been removed
+			if not _right._items.has(_selected_candidate):
+				_selected_candidate = ""
+				_center.clear_candidate(); _center.reset_slots()
 	_refresh_right_colors()
 
 
 func _refresh_right_colors() -> void:
 	if _selected_main.is_empty(): return
-	var names = _tile_data.keys()
-	for name in names:
+	for name in _right._items:
 		var count := 0
 		for dir in _DIRECTIONS:
-			if _is_connected(_selected_main, dir, name):
+			if _is_connected_variant(_selected_main, dir, name):
 				count += 1
 		_right.set_connection_count(name, count)
 
 
-# ------- data logic -------
+# ------- right column variant management -------
+
+func _populate_right_with_rotations() -> void:
+	# Start with base names
+	var bases = _tile_data.keys(); bases.sort()
+	# Clear and rebuild (simpler than diff-based updates)
+	_right._clear()
+	for base in bases:
+		_right._add_item(base, _tile_textures.get(base))
+		var rots: Array = _tile_data[base].get("rotate", [])
+		for r in rots:
+			var vname = base + "_" + str(r)
+			var rtex = _rotate_texture(_tile_textures.get(base), r)
+			_right._add_item(vname, rtex)
+	_right._reorder()
+	_right._set_enabled(true)
+
+
+func _rotate_texture(tex: Texture2D, rot: int) -> Texture2D:
+	if tex == null or rot == 0: return tex
+	var img = tex.get_image()
+	for _r in range(rot):
+		img.rotate_90(CLOCKWISE)
+	return ImageTexture.create_from_image(img)
+
+
+# ------- variant helpers -------
+
+func _get_base_name(tile_name: String) -> String:
+	var info = _resolve_variant(tile_name)
+	return info["base"]
+
+
+func _resolve_variant(tile_name: String) -> Dictionary:
+	var last = tile_name.rfind("_")
+	if last > 0:
+		var suffix = tile_name.substr(last + 1)
+		if suffix == "0" or suffix == "1" or suffix == "2" or suffix == "3":
+			var base = tile_name.substr(0, last)
+			if _tile_data.has(base):
+				return {"base": base, "rotation": suffix.to_int(), "variant": true}
+	return {"base": tile_name, "rotation": 0, "variant": false}
+
+
+func _get_rotations(tile_name: String) -> Array:
+	return _tile_data.get(tile_name, {}).get("rotate", [])
+
+
+# ------- data logic (supports rotated variants) -------
 
 func _get_tags(tile: String, dir: String) -> Array:
-	var idx = _DIRECTIONS.find(dir)
-	if idx < 0: return []
-	var c: Array = _tile_data.get(tile, {}).get("connectors", [[],[],[],[]])
-	return c[idx].duplicate() if c.size() == 4 else []
+	var info = _resolve_variant(tile)
+	var base = info["base"]; var rot = info["rotation"]
+	var base_dir_idx = posmod(_DIRECTIONS.find(dir) - rot, 4)
+	var c: Array = _tile_data.get(base, {}).get("connectors", [[],[],[],[]])
+	return c[base_dir_idx].duplicate() if c.size() == 4 else []
 
 
 func _opposite_dir(dir: String) -> String:
 	match dir:
-		"north":
-			return "south"
-		"south":
-			return "north"
-		"east":
-			return "west"
-		"west":
-			return "east"
+		"north": return "south"
+		"south": return "north"
+		"east":  return "west"
+		"west":  return "east"
 	return ""
 
 
-func _is_connected(main: String, dir: String, cand: String) -> bool:
+func _is_connected_variant(main: String, dir: String, cand: String) -> bool:
 	var mt = _get_tags(main, dir); var ct = _get_tags(cand, _opposite_dir(dir))
 	if mt.is_empty() or ct.is_empty(): return false
 	for tag in mt:
@@ -233,22 +312,42 @@ func _next_tag_id() -> int:
 	return max_id + 1
 
 
-func _add_connection(main: String, dir: String, cand: String) -> void:
-	if _is_connected(main, dir, cand): return
+func _add_connection_variant(main: String, dir: String, cand: String) -> void:
+	var m_info = _resolve_variant(main); var c_info = _resolve_variant(cand)
+	var m_base = m_info["base"]; var m_rot = m_info["rotation"]
+	var c_base = c_info["base"]; var c_rot = c_info["rotation"]
+
+	# Reverse-rotate to base coordinates
+	var m_dir_idx = posmod(_DIRECTIONS.find(dir) - m_rot, 4)
+	var c_dir_idx = posmod(_DIRECTIONS.find(_opposite_dir(dir)) - c_rot, 4)
+
+	# Check existing
+	var mt = _tile_data[m_base]["connectors"][m_dir_idx]
+	var ct = _tile_data[c_base]["connectors"][c_dir_idx]
+	for tag in mt:
+		if tag.begins_with("L") and ("R" + tag.substr(1)) in ct: return
+		if tag.begins_with("R") and ("L" + tag.substr(1)) in ct: return
+
 	var tag_id = _next_tag_id()
-	_tile_data[main]["connectors"][_DIRECTIONS.find(dir)].append("L%d" % tag_id)
-	_tile_data[cand]["connectors"][_DIRECTIONS.find(_opposite_dir(dir))].append("R%d" % tag_id)
+	_tile_data[m_base]["connectors"][m_dir_idx].append("L%d" % tag_id)
+	_tile_data[c_base]["connectors"][c_dir_idx].append("R%d" % tag_id)
 
 
-func _remove_connection(main: String, dir: String, cand: String) -> void:
-	var mi = _DIRECTIONS.find(dir); var ci = _DIRECTIONS.find(_opposite_dir(dir))
-	var mc: Array = _tile_data[main]["connectors"]; var cc: Array = _tile_data[cand]["connectors"]
-	if mc.size() != 4 or cc.size() != 4: return
+func _remove_connection_variant(main: String, dir: String, cand: String) -> void:
+	var m_info = _resolve_variant(main); var c_info = _resolve_variant(cand)
+	var m_base = m_info["base"]; var m_rot = m_info["rotation"]
+	var c_base = c_info["base"]; var c_rot = c_info["rotation"]
+
+	var m_dir_idx = posmod(_DIRECTIONS.find(dir) - m_rot, 4)
+	var c_dir_idx = posmod(_DIRECTIONS.find(_opposite_dir(dir)) - c_rot, 4)
+
+	var mc: Array = _tile_data[m_base]["connectors"]
+	var cc: Array = _tile_data[c_base]["connectors"]
 	var rm = ""; var rc = ""
-	for tag in mc[mi]:
-		if tag.begins_with("L") and ("R" + tag.substr(1)) in cc[ci]: rm = tag; rc = "R" + tag.substr(1); break
-		if tag.begins_with("R") and ("L" + tag.substr(1)) in cc[ci]: rm = tag; rc = "L" + tag.substr(1); break
-	if not rm.is_empty(): mc[mi].erase(rm); cc[ci].erase(rc)
+	for tag in mc[m_dir_idx]:
+		if tag.begins_with("L") and ("R" + tag.substr(1)) in cc[c_dir_idx]: rm = tag; rc = "R" + tag.substr(1); break
+		if tag.begins_with("R") and ("L" + tag.substr(1)) in cc[c_dir_idx]: rm = tag; rc = "L" + tag.substr(1); break
+	if not rm.is_empty(): mc[m_dir_idx].erase(rm); cc[c_dir_idx].erase(rc)
 
 
 # ------- save / back -------
@@ -280,14 +379,12 @@ func _load_prefs() -> void:
 	var f = FileAccess.open(_PREFS_PATH, FileAccess.READ)
 	if f == null: return
 	var json = JSON.parse_string(f.get_as_text())
-	if json is Dictionary:
-		_last_dir = json.get("last_dir", "")
+	if json is Dictionary: _last_dir = json.get("last_dir", "")
 
 
 func _save_prefs() -> void:
 	var f = FileAccess.open(_PREFS_PATH, FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify({"last_dir": _last_dir}))
+	if f: f.store_string(JSON.stringify({"last_dir": _last_dir}))
 
 
 func _on_back_pressed() -> void:

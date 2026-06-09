@@ -51,35 +51,46 @@ static func _parse_module_entry(entry: Dictionary) -> Array[WFCModule]:
 	var cr_data = entry.get("cr")
 	var base_cr: Array = _parse_int_array(cr_data) if cr_data is Array else []
 
+	var rotate_raw = entry.get("rotate", null)
+	var rotations: Array = []
+	if rotate_raw is bool and rotate_raw:
+		rotations = [1, 2, 3]
+	elif rotate_raw is Array:
+		rotations = rotate_raw.duplicate()
+
+	var has_rotations = not rotations.is_empty()
 	var out: Array[WFCModule] = []
 
-	var rotation_count = 4 if rotate else 1
-	for r in range(rotation_count):
-		var mod = WFCModule.new()
-		if rotate:
-			mod.module_name = name + "_" + str(r)
-		else:
-			mod.module_name = name
-		mod.weight = weight
-		mod.preview_color = color
-
-		var conn_dict: Dictionary = {}
-		var cl_dict: Dictionary = {}
-		var cr_dict: Dictionary = {}
-		for d in range(4):
-			var src_idx = posmod(d - r, 4)
-			conn_dict[_DIRECTIONS[d]] = base_connectors[src_idx].duplicate()
-			if base_cl.size() == 4:
-				cl_dict[_DIRECTIONS[d]] = base_cl[src_idx]
-			if base_cr.size() == 4:
-				cr_dict[_DIRECTIONS[d]] = base_cr[src_idx]
-		mod.connectors = conn_dict
-		mod.connect_id_l = cl_dict
-		mod.connect_id_r = cr_dict
-
+	# Rotation 0 always exists
+	var mod0 = _make_module(name, 0, has_rotations, weight, color, base_connectors, base_cl, base_cr)
+	out.append(mod0)
+	for r in rotations:
+		var mod = _make_module(name, r, true, weight, color, base_connectors, base_cl, base_cr)
 		out.append(mod)
-
 	return out
+
+
+static func _make_module(name: String, rot: int, has_rotations: bool, weight: float, color: Color, base_connectors: Array, base_cl: Array, base_cr: Array) -> WFCModule:
+	var mod = WFCModule.new()
+	mod.module_name = name + "_" + str(rot) if has_rotations else name
+	mod.weight = weight
+	mod.preview_color = color
+
+	var conn_dict: Dictionary = {}
+	var cl_dict: Dictionary = {}
+	var cr_dict: Dictionary = {}
+	for d in range(4):
+		var src_idx = posmod(d - rot, 4)
+		conn_dict[_DIRECTIONS[d]] = base_connectors[src_idx].duplicate()
+		if base_cl.size() == 4:
+			cl_dict[_DIRECTIONS[d]] = base_cl[src_idx]
+		if base_cr.size() == 4:
+			cr_dict[_DIRECTIONS[d]] = base_cr[src_idx]
+	mod.connectors = conn_dict
+	mod.connect_id_l = cl_dict
+	mod.connect_id_r = cr_dict
+	return mod
+
 
 static func _parse_connectors(data) -> Array:
 	var result: Array = []

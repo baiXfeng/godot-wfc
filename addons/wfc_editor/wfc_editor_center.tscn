@@ -1,16 +1,33 @@
 [gd_scene format=3 uid="uid://b4wkw2jrrykok"]
 
-[ext_resource type="Script" uid="uid://bxwcm54sjfe3j" path="res://addons/wfc_editor/wfc_editor_center.gd" id="1_script"]
+[ext_resource type="Script" path="res://addons/wfc_editor/wfc_editor_center.gd" id="1_script"]
 
-[node name="CenterColumn" type="CenterContainer" unique_id=1321850640]
-offset_right = 600.0
-offset_bottom = 600.0
+[node name="CenterColumn" type="VBoxContainer"]
 size_flags_horizontal = 3
+alignment = 1
 script = ExtResource("1_script")
 
-[node name="CrossGrid" type="GridContainer" parent="." unique_id=718259371]
+[node name="CrossGrid" type="GridContainer" parent="."]
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/h_separation = 30
 theme_override_constants/v_separation = 30
 columns = 3
+
+[node name="RotBar" type="HBoxContainer" parent="."]
+visible = false
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="Check90" type="CheckBox" parent="RotBar"]
+layout_mode = 2
+text = "90°"
+
+[node name="Check180" type="CheckBox" parent="RotBar"]
+layout_mode = 2
+text = "180°"
+
+[node name="Check270" type="CheckBox" parent="RotBar"]
+layout_mode = 2
+text = "270°"

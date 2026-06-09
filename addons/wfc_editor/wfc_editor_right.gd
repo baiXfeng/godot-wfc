@@ -19,12 +19,24 @@ func populate(tiles: Array, textures: Dictionary) -> void:
 	_clear()
 	_selected = ""
 	for tile_name in tiles:
-		var item = _ITEM_SCENE.instantiate()
-		item.setup(tile_name, textures.get(tile_name))
-		item.pressed.connect(func(): tile_selected.emit(tile_name))
-		_grid.add_child(item)
-		_items[tile_name] = item
+		_add_item(tile_name, textures.get(tile_name))
 	_set_enabled(false)
+
+
+## Insert or update a single item at the correct sorted position.
+func set_item(tile_name: String, texture: Texture2D) -> void:
+	if _items.has(tile_name):
+		_items[tile_name].setup(tile_name, texture)
+		return
+	_add_item(tile_name, texture)
+	_reorder()
+
+
+## Remove a single item.
+func remove_item(tile_name: String) -> void:
+	if not _items.has(tile_name): return
+	_items[tile_name].queue_free()
+	_items.erase(tile_name)
 
 
 func set_enabled(enabled: bool) -> void:
@@ -40,6 +52,20 @@ func highlight(tile_name: String) -> void:
 func set_connection_count(tile_name: String, count: int) -> void:
 	if not _items.has(tile_name): return
 	_items[tile_name].set_count(count)
+
+
+func _add_item(tile_name: String, tex: Texture2D) -> void:
+	var item = _ITEM_SCENE.instantiate()
+	item.setup(tile_name, tex)
+	item.pressed.connect(func(): tile_selected.emit(tile_name))
+	_items[tile_name] = item
+	_grid.add_child(item)
+
+
+func _reorder() -> void:
+	var names = _items.keys(); names.sort()
+	for i in range(names.size()):
+		_grid.move_child(_items[names[i]], i)
 
 
 func _set_enabled(enabled: bool) -> void:

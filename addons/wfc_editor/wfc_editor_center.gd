@@ -1,32 +1,22 @@
 @tool
 class_name WFCEditorCenter
-extends CenterContainer
+extends VBoxContainer
 
-## Emitted when a direction-slot checkbox is toggled.
 signal slot_checked(dir: String, checked: bool)
+signal rotation_toggled(deg: int, enabled: bool)
 
 const _SLOT_SCENE = preload("res://addons/wfc_editor/wfc_tile_slot.tscn")
 const _DIRECTIONS = ["north", "east", "south", "west"]
 
-# 3x3 grid positions:   (0,0)=NW, (1,0)=N, (2,0)=NE
-#                        (0,1)=W,  (1,1)=Center, (2,1)=E
-#                        (0,2)=SW, (1,2)=S,  (2,2)=SE
-const _GRID_POS = {
-	"north": Vector2i(1, 0),
-	"east":  Vector2i(2, 1),
-	"south": Vector2i(1, 2),
-	"west":  Vector2i(0, 1),
-}
-
 var _center_slot: WfcTileSlot
-var _slots: Dictionary = {}  # dir -> WfcTileSlot
+var _slots: Dictionary = {}
 var _grid: GridContainer
 
 
 func _ready() -> void:
 	_grid = $CrossGrid
 	_build_grid()
-	# Connect checkbox signals after all slots exist
+	_connect_rotation_signals()
 	for dir in _DIRECTIONS:
 		var d = dir
 		_slots[dir].checked.connect(func(v): slot_checked.emit(d, v))
@@ -34,21 +24,14 @@ func _ready() -> void:
 
 func _build_grid() -> void:
 	var scene = _SLOT_SCENE
-
 	_add_spacer()
-	var north = scene.instantiate(); _slots["north"] = north; _grid.add_child(north)
+	var n = scene.instantiate(); _slots["north"] = n; _grid.add_child(n)
 	_add_spacer()
-
-	var west = scene.instantiate(); _slots["west"] = west; _grid.add_child(west)
-
-	_center_slot = scene.instantiate()
-	_center_slot.is_center = true
-	_grid.add_child(_center_slot)
-
-	var east = scene.instantiate(); _slots["east"] = east; _grid.add_child(east)
-
+	var w = scene.instantiate(); _slots["west"] = w; _grid.add_child(w)
+	_center_slot = scene.instantiate(); _center_slot.is_center = true; _grid.add_child(_center_slot)
+	var e = scene.instantiate(); _slots["east"] = e; _grid.add_child(e)
 	_add_spacer()
-	var south = scene.instantiate(); _slots["south"] = south; _grid.add_child(south)
+	var s = scene.instantiate(); _slots["south"] = s; _grid.add_child(s)
 	_add_spacer()
 
 
@@ -58,18 +41,37 @@ func _add_spacer() -> void:
 	_grid.add_child(c)
 
 
-## Display [tile_name] with [texture] as the center tile.
+func _connect_rotation_signals() -> void:
+	$RotBar/Check90.toggled.connect(func(v): rotation_toggled.emit(90, v))
+	$RotBar/Check180.toggled.connect(func(v): rotation_toggled.emit(180, v))
+	$RotBar/Check270.toggled.connect(func(v): rotation_toggled.emit(270, v))
+
+
+## Show rotation checkboxes with given states. [rotations] e.g. [1, 3]
+func show_rotations(rotations: Array) -> void:
+	$RotBar.show()
+	$RotBar/Check90.set_block_signals(true); $RotBar/Check90.button_pressed = 1 in rotations; $RotBar/Check90.set_block_signals(false)
+	$RotBar/Check180.set_block_signals(true); $RotBar/Check180.button_pressed = 2 in rotations; $RotBar/Check180.set_block_signals(false)
+	$RotBar/Check270.set_block_signals(true); $RotBar/Check270.button_pressed = 3 in rotations; $RotBar/Check270.set_block_signals(false)
+
+
+func hide_rotations() -> void:
+	$RotBar.hide()
+
+
 func set_main(tile_name: String, texture: Texture2D) -> void:
 	_center_slot.set_tile(tile_name, texture)
 
 
-## Fill all 4 direction slots with [tile_name] and [texture].
-func set_candidate(tile_name: String, texture: Texture2D) -> void:
+func set_candidate(tile_name: String, texture: Texture2D, rotation: int = 0) -> void:
 	for dir in _DIRECTIONS:
 		_slots[dir].set_tile(tile_name, texture)
+		# Apply rotation to the slot display (image rotation handled by caller)
+	var rot_tex = _rotate_texture(texture, rotation) if rotation > 0 else texture
+	for dir in _DIRECTIONS:
+		_slots[dir].set_tile(tile_name, rot_tex if rotation > 0 else texture)
 
 
-## Remove the candidate from all direction slots.
 func clear_candidate() -> void:
 	for dir in _DIRECTIONS:
 		_slots[dir].set_tile("", null)
@@ -77,7 +79,6 @@ func clear_candidate() -> void:
 		_slots[dir].set_connected(false)
 
 
-## Set a direction slot's connection state: checked + full color, or unchecked + grayscale.
 func set_slot_connected(dir: String, connected: bool) -> void:
 	var slot = _slots[dir]
 	slot.set_check_visible(true)
@@ -85,10 +86,17 @@ func set_slot_connected(dir: String, connected: bool) -> void:
 	slot.set_connected(connected)
 
 
-## Hide all checkboxes and dim all direction slots.
 func reset_slots() -> void:
 	for dir in _DIRECTIONS:
 		var slot = _slots[dir]
 		slot.set_check_visible(false)
 		slot.set_check_state(false)
 		slot.set_connected(false)
+
+
+func _rotate_texture(tex: Texture2D, rot: int) -> Texture2D:
+	if tex == null: return null
+	var img = tex.get_image()
+	for _r in range(rot):
+		img.rotate_90(CLOCKWISE)
+	return ImageTexture.create_from_image(img)
