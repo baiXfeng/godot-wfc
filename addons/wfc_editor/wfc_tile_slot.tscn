@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://dokw0mv8ptqwb"]
+
+[ext_resource type="Script" uid="uid://kikoi0gqw86u" path="res://addons/wfc_editor/wfc_tile_slot.gd" id="1_script"]
+
+[node name="WfcTileSlot" type="Control" unique_id=1155860451]
+custom_minimum_size = Vector2(180, 180)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_script")
+
+[node name="Tex" type="TextureRect" parent="." unique_id=1983098479]
+modulate = Color(0.3, 0.3, 0.3, 1)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 0.888
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="." unique_id=477687852]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.888
+anchor_bottom = 1.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+clip_text = true
+
+[node name="Check" type="CheckBox" parent="." unique_id=1957680399]
+visible = false
+layout_mode = 0
+offset_left = 160.0
+offset_top = 2.0
+offset_right = 178.0
+offset_bottom = 18.0
+focus_mode = 0

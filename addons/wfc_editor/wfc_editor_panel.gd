@@ -12,6 +12,9 @@ var _selected_main: String = ""
 var _selected_candidate: String = ""
 
 const _DIRECTIONS = ["north", "east", "south", "west"]
+const _PREFS_PATH := "user://wfc_editor_prefs.json"
+
+var _last_dir: String = ""
 
 var _load_screen: Control
 var _editor_screen: Control
@@ -28,6 +31,7 @@ func _ready() -> void:
 	_dir_label = $EditorScreen/TopBar/DirLabel
 	_instantiate_columns()
 	_connect_signals()
+	_load_prefs()
 	_editor_screen.hide()
 
 
@@ -62,6 +66,8 @@ func _on_load_pressed() -> void:
 	var fd = EditorFileDialog.new()
 	fd.file_mode = EditorFileDialog.FILE_MODE_OPEN_DIR
 	fd.access = EditorFileDialog.ACCESS_RESOURCES
+	if not _last_dir.is_empty():
+		fd.current_dir = _last_dir
 	fd.dir_selected.connect(func(path):
 		_load_directory(path)
 		fd.queue_free()
@@ -72,6 +78,8 @@ func _on_load_pressed() -> void:
 
 func _load_directory(path: String) -> void:
 	_dir_path = path
+	_last_dir = path
+	_save_prefs()
 	_tile_data.clear()
 	_tile_textures.clear()
 
@@ -260,6 +268,21 @@ func _on_save_pressed() -> void:
 	var out = {"connector_colors": {}, "modules": modules}
 	var file = FileAccess.open(_dir_path + "/modules.json", FileAccess.WRITE)
 	if file: file.store_string(JSON.stringify(out, "\t")); file.close()
+
+
+func _load_prefs() -> void:
+	if not FileAccess.file_exists(_PREFS_PATH): return
+	var f = FileAccess.open(_PREFS_PATH, FileAccess.READ)
+	if f == null: return
+	var json = JSON.parse_string(f.get_as_text())
+	if json is Dictionary:
+		_last_dir = json.get("last_dir", "")
+
+
+func _save_prefs() -> void:
+	var f = FileAccess.open(_PREFS_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify({"last_dir": _last_dir}))
 
 
 func _on_back_pressed() -> void:

@@ -5,6 +5,7 @@ extends VBoxContainer
 ## Emitted when a direction-slot checkbox is toggled.
 signal slot_checked(dir: String, checked: bool)
 
+const _SLOT_SCENE = preload("res://addons/wfc_editor/wfc_tile_slot.tscn")
 const _DIRECTIONS = ["north", "east", "south", "west"]
 
 # 3x3 grid positions:   (0,0)=NW, (1,0)=N, (2,0)=NE
@@ -32,30 +33,23 @@ func _ready() -> void:
 
 
 func _build_grid() -> void:
-	# Row 0: spacer | north | spacer
+	var scene = _SLOT_SCENE
+
 	_add_spacer()
-	var north = _make_dir_slot(); _slots["north"] = north; _grid.add_child(north)
+	var north = scene.instantiate(); _slots["north"] = north; _grid.add_child(north)
 	_add_spacer()
 
-	# Row 1: west | center | east
-	var west = _make_dir_slot(); _slots["west"] = west; _grid.add_child(west)
+	var west = scene.instantiate(); _slots["west"] = west; _grid.add_child(west)
 
-	_center_slot = WfcTileSlot.new()
+	_center_slot = scene.instantiate()
 	_center_slot.is_center = true
 	_grid.add_child(_center_slot)
 
-	var east = _make_dir_slot(); _slots["east"] = east; _grid.add_child(east)
+	var east = scene.instantiate(); _slots["east"] = east; _grid.add_child(east)
 
-	# Row 2: spacer | south | spacer
 	_add_spacer()
-	var south = _make_dir_slot(); _slots["south"] = south; _grid.add_child(south)
+	var south = scene.instantiate(); _slots["south"] = south; _grid.add_child(south)
 	_add_spacer()
-
-
-func _make_dir_slot() -> WfcTileSlot:
-	var slot = WfcTileSlot.new()
-	slot.is_center = false
-	return slot
 
 
 func _add_spacer() -> void:
