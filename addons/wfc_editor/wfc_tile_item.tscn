@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://d1wryfh2y3xj"]
+
+[ext_resource type="Script" uid="uid://dirkltpq0vqek" path="res://addons/wfc_editor/wfc_tile_item.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="panel_style"]
+bg_color = Color(0.15, 0.15, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.15, 0.15, 0.15, 1)
+
+[node name="WfcTileItem" type="PanelContainer" unique_id=21401637]
+custom_minimum_size = Vector2(180, 180)
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("panel_style")
+script = ExtResource("1_script")
+
+[node name="VBox" type="VBoxContainer" parent="." unique_id=581154563]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Tex" type="TextureRect" parent="VBox" unique_id=1622721871]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="VBox" unique_id=989385618]
+custom_minimum_size = Vector2(64, 16)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+clip_text = true
