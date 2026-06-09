@@ -266,7 +266,10 @@ func _resolve_variant(tile_name: String) -> Dictionary:
 
 
 func _get_rotations(tile_name: String) -> Array:
-	return _tile_data.get(tile_name, {}).get("rotate", [])
+	var raw = _tile_data.get(tile_name, {}).get("rotate", [])
+	var out: Array = []
+	for r in raw: out.append(r as int)
+	return out
 
 
 # ------- data logic (supports rotated variants) -------

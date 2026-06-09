@@ -49,10 +49,17 @@ func _connect_rotation_signals() -> void:
 
 ## Show rotation checkboxes with given states. [rotations] e.g. [1, 3]
 func show_rotations(rotations: Array) -> void:
-	$RotBar.show()
-	$RotBar/Check90.set_block_signals(true); $RotBar/Check90.button_pressed = 1 in rotations; $RotBar/Check90.set_block_signals(false)
-	$RotBar/Check180.set_block_signals(true); $RotBar/Check180.button_pressed = 2 in rotations; $RotBar/Check180.set_block_signals(false)
-	$RotBar/Check270.set_block_signals(true); $RotBar/Check270.button_pressed = 3 in rotations; $RotBar/Check270.set_block_signals(false)
+	# Ensure int comparison
+	var int_rots: Array = []
+	for r in rotations: int_rots.append(r as int)
+
+	var has_any = not rotations.is_empty()
+	$RotBar.visible = has_any
+	if not has_any: return
+
+	$RotBar/Check90.set_block_signals(true); $RotBar/Check90.button_pressed = 1 in int_rots; $RotBar/Check90.set_block_signals(false)
+	$RotBar/Check180.set_block_signals(true); $RotBar/Check180.button_pressed = 2 in int_rots; $RotBar/Check180.set_block_signals(false)
+	$RotBar/Check270.set_block_signals(true); $RotBar/Check270.button_pressed = 3 in int_rots; $RotBar/Check270.set_block_signals(false)
 
 
 func hide_rotations() -> void:
