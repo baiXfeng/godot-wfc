@@ -16,6 +16,8 @@ const _PREFS_PATH := "user://wfc_editor_prefs.json"
 const DEBUG_LOG := false
 
 var _last_dir: String = ""
+var _left_cols: int = 2
+var _right_cols: int = 2
 
 var _load_screen: Control
 var _editor_screen: Control
@@ -33,6 +35,8 @@ func _ready() -> void:
 	_instantiate_columns()
 	_connect_signals()
 	_load_prefs()
+	$EditorScreen/TopBar/LeftCols.value = _left_cols
+	$EditorScreen/TopBar/RightCols.value = _right_cols
 	_editor_screen.hide()
 
 
@@ -60,8 +64,12 @@ func _connect_signals() -> void:
 	$LoadScreen/LoadButton.pressed.connect(_on_load_pressed)
 	$EditorScreen/TopBar/BackButton.pressed.connect(_on_back_pressed)
 	$EditorScreen/TopBar/SaveButton.pressed.connect(_on_save_pressed)
-	$EditorScreen/TopBar/LeftCols.value_changed.connect(func(v): _left.set_columns(v as int))
-	$EditorScreen/TopBar/RightCols.value_changed.connect(func(v): _right.set_columns(v as int))
+	$EditorScreen/TopBar/LeftCols.value_changed.connect(func(v):
+		_left_cols = v as int; _left.set_columns(_left_cols); _save_prefs()
+	)
+	$EditorScreen/TopBar/RightCols.value_changed.connect(func(v):
+		_right_cols = v as int; _right.set_columns(_right_cols); _save_prefs()
+	)
 
 
 # ------- actions -------
@@ -399,12 +407,16 @@ func _load_prefs() -> void:
 	var f = FileAccess.open(_PREFS_PATH, FileAccess.READ)
 	if f == null: return
 	var json = JSON.parse_string(f.get_as_text())
-	if json is Dictionary: _last_dir = json.get("last_dir", "")
+	if json is Dictionary:
+		_last_dir = json.get("last_dir", "")
+		if json.has("left_cols"): _left_cols = json["left_cols"] as int
+		if json.has("right_cols"): _right_cols = json["right_cols"] as int
 
 
 func _save_prefs() -> void:
 	var f = FileAccess.open(_PREFS_PATH, FileAccess.WRITE)
-	if f: f.store_string(JSON.stringify({"last_dir": _last_dir}))
+	if f:
+		f.store_string(JSON.stringify({"last_dir": _last_dir, "left_cols": _left_cols, "right_cols": _right_cols}))
 
 
 func _on_back_pressed() -> void:
