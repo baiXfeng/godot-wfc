@@ -7,6 +7,7 @@ signal rotation_toggled(deg: int, enabled: bool)
 
 const _SLOT_SCENE = preload("res://addons/wfc_editor/wfc_tile_slot.tscn")
 const _DIRECTIONS = ["north", "east", "south", "west"]
+const DEBUG_LOG := false
 
 var _center_slot: WfcTileSlot
 var _slots: Dictionary = {}
@@ -70,8 +71,9 @@ func set_candidate(tile_name: String, texture: Texture2D, rotation: int = 0) -> 
 	var rot_tex = _rotate_texture(texture, rotation) if rotation > 0 else texture
 	if rot_tex == null: rot_tex = texture
 
-	_ed_log("set_candidate name=%s rot=%d orig=%s final=%s" % [tile_name, rotation,
-		"ok" if texture else "NULL", "ok" if rot_tex else "NULL"])
+	if DEBUG_LOG:
+		_ed_log("set_candidate name=%s rot=%d orig=%s final=%s" % [tile_name, rotation,
+			"ok" if texture else "NULL", "ok" if rot_tex else "NULL"])
 
 	for dir in _DIRECTIONS:
 		_slots[dir].set_tile(tile_name, rot_tex)
@@ -104,14 +106,17 @@ func _rotate_texture(tex: Texture2D, rot: int) -> Texture2D:
 	if tex == null or rot == 0: return tex
 	var img = tex.get_image()
 	if img == null:
-		_ed_log("_rotate_texture get_image=NULL rot=%d" % rot)
+		if DEBUG_LOG:
+			_ed_log("_rotate_texture get_image=NULL rot=%d" % rot)
 		return tex
 	img = img.duplicate()
-	_ed_log("_rotate_texture before rot=%d size=%dx%d" % [rot, img.get_width(), img.get_height()])
+	if DEBUG_LOG:
+		_ed_log("_rotate_texture before rot=%d size=%dx%d" % [rot, img.get_width(), img.get_height()])
 	for _r in range(rot):
 		img.rotate_90(CLOCKWISE)
 	var result = ImageTexture.create_from_image(img)
-	_ed_log("_rotate_texture after result=%s size=%dx%d" % ["ok" if result else "NULL", img.get_width(), img.get_height()])
+	if DEBUG_LOG:
+		_ed_log("_rotate_texture after result=%s size=%dx%d" % ["ok" if result else "NULL", img.get_width(), img.get_height()])
 	return result
 
 

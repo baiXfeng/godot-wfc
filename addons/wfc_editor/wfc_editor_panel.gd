@@ -13,6 +13,7 @@ var _selected_candidate: String = ""
 
 const _DIRECTIONS = ["north", "east", "south", "west"]
 const _PREFS_PATH := "user://wfc_editor_prefs.json"
+const DEBUG_LOG := false
 
 var _last_dir: String = ""
 
@@ -169,7 +170,8 @@ func _on_candidate_selected(tile_name: String) -> void:
 	var base = info["base"]; var rot = info["rotation"]
 	var tex = _tile_textures.get(base)
 
-	_log("candidate=%s base=%s rot=%d tex=%s" % [tile_name, base, rot, "ok" if tex else "NULL"])
+	if DEBUG_LOG:
+		_log("candidate=%s base=%s rot=%d tex=%s" % [tile_name, base, rot, "ok" if tex else "NULL"])
 
 	_center.set_candidate(tile_name, tex, rot)
 
@@ -238,7 +240,8 @@ func _populate_right_with_rotations() -> void:
 			var vname = base + "_" + str(r)
 			var rtex = _rotate_texture(_tile_textures.get(base), r)
 			_right._add_item(vname, rtex)
-			_log("populate_right add %s rot=%d tex=%s" % [vname, r, "ok" if rtex else "NULL"])
+			if DEBUG_LOG:
+				_log("populate_right add %s rot=%d tex=%s" % [vname, r, "ok" if rtex else "NULL"])
 	_right._reorder()
 	_right._set_enabled(true)
 

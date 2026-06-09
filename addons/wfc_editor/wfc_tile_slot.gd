@@ -2,6 +2,8 @@
 class_name WfcTileSlot
 extends Control
 
+const DEBUG_LOG := false
+
 ## Set to true for center tiles to hide the checkbox permanently.
 @export var is_center: bool = false:
 	set(v):
@@ -24,10 +26,12 @@ func _ready() -> void:
 func set_tile(tile_name: String, texture: Texture2D) -> void:
 	if texture:
 		$Tex.texture = texture
-		_ts_log("set_tile name=%s tex=%dx%d" % [tile_name, texture.get_width(), texture.get_height()])
+		if DEBUG_LOG:
+			_ts_log("set_tile name=%s tex=%dx%d" % [tile_name, texture.get_width(), texture.get_height()])
 	else:
 		$Tex.texture = null
-		_ts_log("set_tile name=%s tex=NULL" % tile_name)
+		if DEBUG_LOG:
+			_ts_log("set_tile name=%s tex=NULL" % tile_name)
 
 	if is_center:
 		$Tex.modulate = Color.WHITE

@@ -2,6 +2,8 @@
 class_name WFCEditorRight
 extends VBoxContainer
 
+const DEBUG_LOG := false
+
 signal tile_selected(tile_name: String)
 
 const _ITEM_SCENE = preload("res://addons/wfc_editor/wfc_tile_item.tscn")
@@ -58,7 +60,8 @@ func _add_item(tile_name: String, tex: Texture2D) -> void:
 	var item = _ITEM_SCENE.instantiate()
 	item.setup(tile_name, tex)
 	item.pressed.connect(func():
-		_right_log("right_click name=%s" % tile_name)
+		if DEBUG_LOG:
+			_right_log("right_click name=%s" % tile_name)
 		tile_selected.emit(tile_name)
 	)
 	_items[tile_name] = item
