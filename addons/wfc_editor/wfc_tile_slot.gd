@@ -23,9 +23,12 @@ func _ready() -> void:
 
 func set_tile(tile_name: String, texture: Texture2D) -> void:
 	if texture:
-		$Tex.texture = texture; $Label.text = tile_name
+		$Tex.texture = texture
 	else:
-		$Tex.texture = null; $Label.text = ""
+		$Tex.texture = null
+
+	if is_center:
+		$Tex.modulate = Color.WHITE
 
 
 func set_connected(connected: bool) -> void:
