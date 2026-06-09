@@ -18,6 +18,7 @@ const DEBUG_LOG := false
 var _last_dir: String = ""
 var _left_cols: int = 2
 var _right_cols: int = 2
+var _dirty: bool = false
 
 var _load_screen: Control
 var _editor_screen: Control
@@ -91,6 +92,8 @@ func _on_load_pressed() -> void:
 func _load_directory(path: String) -> void:
 	_dir_path = path; _last_dir = path; _save_prefs()
 	_tile_data.clear(); _tile_textures.clear()
+	_dirty = false
+	_update_save_button()
 
 	var dir = DirAccess.open(path)
 	if dir == null: return
@@ -202,6 +205,7 @@ func _on_slot_checked(dir: String, checked: bool) -> void:
 	else:
 		_remove_connection_variant(_selected_main, dir, _selected_candidate)
 	_refresh_right_colors()
+	_mark_dirty()
 
 
 func _on_rotation_toggled(deg: int, enabled: bool) -> void:
@@ -228,6 +232,7 @@ func _on_rotation_toggled(deg: int, enabled: bool) -> void:
 				_selected_candidate = ""
 				_center.clear_candidate(); _center.reset_slots()
 	_refresh_right_colors()
+	_mark_dirty()
 
 
 func _refresh_right_colors() -> void:
@@ -400,6 +405,8 @@ func _on_save_pressed() -> void:
 	var out = {"connector_colors": {}, "modules": modules}
 	var file = FileAccess.open(_dir_path + "/modules.json", FileAccess.WRITE)
 	if file: file.store_string(JSON.stringify(out, "\t")); file.close()
+	_dirty = false
+	_update_save_button()
 
 
 func _load_prefs() -> void:
@@ -420,7 +427,49 @@ func _save_prefs() -> void:
 
 
 func _on_back_pressed() -> void:
+	if _dirty:
+		_show_save_dialog()
+	else:
+		_do_back()
+
+
+func _do_back() -> void:
 	_editor_screen.hide(); _load_screen.show()
+
+
+func _show_save_dialog() -> void:
+	var dlg = ConfirmationDialog.new()
+	dlg.title = "未保存的更改"
+	dlg.dialog_text = "你有未保存的更改，是否保存后再返回？"
+	dlg.add_button("保存并返回", true, "save")
+	dlg.add_button("放弃并返回", false, "discard")
+	dlg.confirmed.connect(func():
+		_on_save_pressed()
+		_do_back()
+		dlg.queue_free()
+	)
+	dlg.canceled.connect(func():
+		_do_back()
+		dlg.queue_free()
+	)
+	add_child(dlg)
+	dlg.popup_centered()
+
+
+func _mark_dirty() -> void:
+	if not _dirty:
+		_dirty = true
+		_update_save_button()
+
+
+func _update_save_button() -> void:
+	var btn: Button = $EditorScreen/TopBar/SaveButton
+	if _dirty:
+		btn.text = "保存配置(*)"
+		btn.add_theme_color_override("font_color", Color.RED)
+	else:
+		btn.text = "保存配置"
+		btn.add_theme_color_override("font_color", Color.WHITE)
 
 
 func _log(msg: String) -> void:
