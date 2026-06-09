@@ -441,8 +441,8 @@ func _show_save_dialog() -> void:
 	var dlg = ConfirmationDialog.new()
 	dlg.title = "未保存的更改"
 	dlg.dialog_text = "你有未保存的更改，是否保存后再返回？"
-	dlg.add_button("保存并返回", true, "save")
-	dlg.add_button("放弃并返回", false, "discard")
+	dlg.ok_button_text = "保存并退出"
+	dlg.cancel_button_text = "忽略并退出"
 	dlg.confirmed.connect(func():
 		_on_save_pressed()
 		_do_back()
