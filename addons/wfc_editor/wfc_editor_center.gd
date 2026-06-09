@@ -67,12 +67,15 @@ func set_main(tile_name: String, texture: Texture2D) -> void:
 
 
 func set_candidate(tile_name: String, texture: Texture2D, rotation: int = 0) -> void:
-	for dir in _DIRECTIONS:
-		_slots[dir].set_tile(tile_name, texture)
-		# Apply rotation to the slot display (image rotation handled by caller)
 	var rot_tex = _rotate_texture(texture, rotation) if rotation > 0 else texture
+	if rot_tex == null: rot_tex = texture
+
+	_ed_log("set_candidate name=%s rot=%d orig=%s final=%s" % [tile_name, rotation,
+		"ok" if texture else "NULL", "ok" if rot_tex else "NULL"])
+
 	for dir in _DIRECTIONS:
-		_slots[dir].set_tile(tile_name, rot_tex if rotation > 0 else texture)
+		_slots[dir].set_tile(tile_name, rot_tex)
+		_slots[dir].set_connected(true)  # show full color by default
 
 
 func clear_candidate() -> void:
@@ -98,8 +101,23 @@ func reset_slots() -> void:
 
 
 func _rotate_texture(tex: Texture2D, rot: int) -> Texture2D:
-	if tex == null: return null
+	if tex == null or rot == 0: return tex
 	var img = tex.get_image()
+	if img == null:
+		_ed_log("_rotate_texture get_image=NULL rot=%d" % rot)
+		return tex
+	img = img.duplicate()
+	_ed_log("_rotate_texture before rot=%d size=%dx%d" % [rot, img.get_width(), img.get_height()])
 	for _r in range(rot):
 		img.rotate_90(CLOCKWISE)
-	return ImageTexture.create_from_image(img)
+	var result = ImageTexture.create_from_image(img)
+	_ed_log("_rotate_texture after result=%s size=%dx%d" % ["ok" if result else "NULL", img.get_width(), img.get_height()])
+	return result
+
+
+func _ed_log(msg: String) -> void:
+	var f = FileAccess.open("user://wfc_editor.log", FileAccess.WRITE_READ)
+	if f:
+		f.seek_end()
+		f.store_line(msg)
+		f.close()

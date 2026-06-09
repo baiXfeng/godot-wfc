@@ -57,9 +57,20 @@ func set_connection_count(tile_name: String, count: int) -> void:
 func _add_item(tile_name: String, tex: Texture2D) -> void:
 	var item = _ITEM_SCENE.instantiate()
 	item.setup(tile_name, tex)
-	item.pressed.connect(func(): tile_selected.emit(tile_name))
+	item.pressed.connect(func():
+		_right_log("right_click name=%s" % tile_name)
+		tile_selected.emit(tile_name)
+	)
 	_items[tile_name] = item
 	_grid.add_child(item)
+
+
+func _right_log(msg: String) -> void:
+	var f = FileAccess.open("user://wfc_editor.log", FileAccess.WRITE_READ)
+	if f:
+		f.seek_end()
+		f.store_line(msg)
+		f.close()
 
 
 func _reorder() -> void:

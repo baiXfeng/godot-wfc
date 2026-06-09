@@ -169,6 +169,8 @@ func _on_candidate_selected(tile_name: String) -> void:
 	var base = info["base"]; var rot = info["rotation"]
 	var tex = _tile_textures.get(base)
 
+	_log("candidate=%s base=%s rot=%d tex=%s" % [tile_name, base, rot, "ok" if tex else "NULL"])
+
 	_center.set_candidate(tile_name, tex, rot)
 
 	for dir in _DIRECTIONS:
@@ -231,17 +233,19 @@ func _populate_right_with_rotations() -> void:
 	for base in bases:
 		_right._add_item(base, _tile_textures.get(base))
 		var rots: Array = _tile_data[base].get("rotate", [])
-		for r in rots:
+		for r_raw in rots:
+			var r: int = r_raw as int
 			var vname = base + "_" + str(r)
 			var rtex = _rotate_texture(_tile_textures.get(base), r)
 			_right._add_item(vname, rtex)
+			_log("populate_right add %s rot=%d tex=%s" % [vname, r, "ok" if rtex else "NULL"])
 	_right._reorder()
 	_right._set_enabled(true)
 
 
 func _rotate_texture(tex: Texture2D, rot: int) -> Texture2D:
 	if tex == null or rot == 0: return tex
-	var img = tex.get_image()
+	var img = tex.get_image().duplicate()
 	for _r in range(rot):
 		img.rotate_90(CLOCKWISE)
 	return ImageTexture.create_from_image(img)
@@ -392,3 +396,11 @@ func _save_prefs() -> void:
 
 func _on_back_pressed() -> void:
 	_editor_screen.hide(); _load_screen.show()
+
+
+func _log(msg: String) -> void:
+	var f = FileAccess.open("user://wfc_editor.log", FileAccess.WRITE_READ)
+	if f:
+		f.seek_end()
+		f.store_line(msg)
+		f.close()
