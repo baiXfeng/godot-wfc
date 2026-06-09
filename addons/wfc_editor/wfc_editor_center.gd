@@ -1,6 +1,6 @@
 @tool
 class_name WFCEditorCenter
-extends VBoxContainer
+extends CenterContainer
 
 signal slot_checked(dir: String, checked: bool)
 signal rotation_toggled(deg: int, enabled: bool)
@@ -15,7 +15,7 @@ var _grid: GridContainer
 
 
 func _ready() -> void:
-	_grid = $CrossGrid
+	_grid = $Inner/CrossGrid
 	_build_grid()
 	_connect_rotation_signals()
 	for dir in _DIRECTIONS:
@@ -43,9 +43,9 @@ func _add_spacer() -> void:
 
 
 func _connect_rotation_signals() -> void:
-	$RotBar/Check90.toggled.connect(func(v): rotation_toggled.emit(90, v))
-	$RotBar/Check180.toggled.connect(func(v): rotation_toggled.emit(180, v))
-	$RotBar/Check270.toggled.connect(func(v): rotation_toggled.emit(270, v))
+	$Inner/RotBar/Check90.toggled.connect(func(v): rotation_toggled.emit(90, v))
+	$Inner/RotBar/Check180.toggled.connect(func(v): rotation_toggled.emit(180, v))
+	$Inner/RotBar/Check270.toggled.connect(func(v): rotation_toggled.emit(270, v))
 
 
 ## Show rotation checkboxes with given states. [rotations] e.g. [1, 3]
@@ -53,14 +53,14 @@ func show_rotations(rotations: Array) -> void:
 	var int_rots: Array = []
 	for r in rotations: int_rots.append(r as int)
 
-	$RotBar.show()
-	$RotBar/Check90.set_block_signals(true); $RotBar/Check90.button_pressed = 1 in int_rots; $RotBar/Check90.set_block_signals(false)
-	$RotBar/Check180.set_block_signals(true); $RotBar/Check180.button_pressed = 2 in int_rots; $RotBar/Check180.set_block_signals(false)
-	$RotBar/Check270.set_block_signals(true); $RotBar/Check270.button_pressed = 3 in int_rots; $RotBar/Check270.set_block_signals(false)
+	$Inner/RotBar.show()
+	$Inner/RotBar/Check90.set_block_signals(true); $Inner/RotBar/Check90.button_pressed = 1 in int_rots; $Inner/RotBar/Check90.set_block_signals(false)
+	$Inner/RotBar/Check180.set_block_signals(true); $Inner/RotBar/Check180.button_pressed = 2 in int_rots; $Inner/RotBar/Check180.set_block_signals(false)
+	$Inner/RotBar/Check270.set_block_signals(true); $Inner/RotBar/Check270.button_pressed = 3 in int_rots; $Inner/RotBar/Check270.set_block_signals(false)
 
 
 func hide_rotations() -> void:
-	$RotBar.hide()
+	$Inner/RotBar.hide()
 
 
 func set_main(tile_name: String, texture: Texture2D) -> void:
