@@ -37,7 +37,7 @@ static func load_module_set(json_path: String) -> WFCModuleSet:
 static func _parse_module_entry(entry: Dictionary) -> Array[WFCModule]:
 	var name: String = entry.get("name", "")
 	var weight: float = entry.get("weight", 1.0)
-	var rotate: bool = entry.get("rotate", false)
+	var rotate_raw = entry.get("rotate", null)
 	var color: Color = _parse_color(entry.get("color", ""), name)
 	var texture_path: String = entry.get("texture", "")
 	if texture_path.is_empty():
@@ -51,7 +51,6 @@ static func _parse_module_entry(entry: Dictionary) -> Array[WFCModule]:
 	var cr_data = entry.get("cr")
 	var base_cr: Array = _parse_int_array(cr_data) if cr_data is Array else []
 
-	var rotate_raw = entry.get("rotate", null)
 	var rotations: Array = []
 	if rotate_raw is bool and rotate_raw:
 		rotations = [1, 2, 3]
