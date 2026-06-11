@@ -8,9 +8,12 @@ extends Node2D
 @export var rng_seed: int = -1
 @export var periodic: bool = false
 @export var cell_pixels: int = 48
-@export var config_path: String = "res://assets/test/modules.json"
+@export var config_path: String = "res://assets/Tileset/modules.json"
 
 var _texture_dir: String = ""
+var _atlas_image: Image = null
+var _atlas_cols: int = 0
+var _atlas_rows: int = 0
 var _tile_map: TileMapLayer
 var _result: WFCSolverResult
 var _tile_source_id: int = -1
@@ -30,6 +33,7 @@ func _ready() -> void:
 		return
 
 	_texture_dir = config_path.get_base_dir() + "/"
+	_load_atlas_if_present()
 	_build_tile_set()
 	_generate()
 
@@ -46,10 +50,17 @@ func _build_tile_set() -> void:
 
 	for i in range(module_count):
 		var mod_name = module_set.modules[i].module_name
-		var tex_path = _texture_path_for_module(mod_name)
-		var img = _load_image(tex_path)
+		var img: Image = null
+
+		if _atlas_image:
+			img = _extract_atlas_region(mod_name)
+		else:
+			img = _load_image(_texture_path_for_module(mod_name))
+
 		if img == null:
 			continue
+		if img.get_format() != Image.FORMAT_RGBA8:
+			img.convert(Image.FORMAT_RGBA8)
 		if img.get_width() != cell_pixels or img.get_height() != cell_pixels:
 			img.resize(cell_pixels, cell_pixels, Image.INTERPOLATE_NEAREST)
 		var rot = _get_module_rotation(mod_name)
@@ -70,6 +81,37 @@ func _build_tile_set() -> void:
 	_tile_source_id = source_id
 
 	_tile_map.tile_set = tile_set
+
+func _load_atlas_if_present() -> void:
+	if not FileAccess.file_exists(config_path): return
+	var f = FileAccess.open(config_path, FileAccess.READ)
+	if f == null: return
+	var json = JSON.parse_string(f.get_as_text())
+	if json == null or not json.has("atlas"): return
+
+	var a = json["atlas"]
+	var atlas_path = _texture_dir + a["path"]
+	if not FileAccess.file_exists(atlas_path): return
+
+	var tex = load(atlas_path) as Texture2D
+	if tex == null: return
+	_atlas_image = tex.get_image()
+	if _atlas_image == null: return
+	_atlas_cols = a["columns"] as int
+	_atlas_rows = a["rows"] as int
+
+
+func _extract_atlas_region(module_name: String) -> Image:
+	# Parse "prefix_row_col" → row, col
+	var parts = module_name.rsplit("_", true, 2)
+	if parts.size() < 2: return null
+	var col = parts[parts.size() - 1].to_int()
+	var row = parts[parts.size() - 2].to_int()
+
+	var tw: int = _atlas_image.get_width() / _atlas_cols
+	var th: int = _atlas_image.get_height() / _atlas_rows
+	return _atlas_image.get_region(Rect2i(col * tw, row * th, tw, th))
+
 
 func _texture_path_for_module(module_name: String) -> String:
 	var base = module_name
