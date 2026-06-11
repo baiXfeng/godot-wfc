@@ -21,8 +21,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="LoadButton" type="Button" parent="LoadScreen" unique_id=283740503]
-custom_minimum_size = Vector2(200, 60)
+[node name="LoadBox" type="VBoxContainer" parent="LoadScreen"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -31,7 +30,18 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
-text = "加载图块配置"
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="DirButton" type="Button" parent="LoadScreen/LoadBox"]
+layout_mode = 2
+text = "从目录加载"
+custom_minimum_size = Vector2(200, 50)
+
+[node name="AtlasButton" type="Button" parent="LoadScreen/LoadBox"]
+layout_mode = 2
+text = "从图集加载"
+custom_minimum_size = Vector2(200, 50)
 
 [node name="EditorScreen" type="VBoxContainer" parent="." unique_id=102411709]
 visible = false

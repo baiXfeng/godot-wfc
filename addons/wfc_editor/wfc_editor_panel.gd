@@ -16,9 +16,11 @@ const _PREFS_PATH := "user://wfc_editor_prefs.json"
 const DEBUG_LOG := false
 
 var _last_dir: String = ""
+var _last_atlas_dir: String = ""
 var _left_cols: int = 2
 var _right_cols: int = 2
 var _dirty: bool = false
+var _atlas_info: Dictionary = {}  # {path, columns, rows, name_template}
 
 var _load_screen: Control
 var _editor_screen: Control
@@ -63,7 +65,8 @@ func _instantiate_columns() -> void:
 
 
 func _connect_signals() -> void:
-	$LoadScreen/LoadButton.pressed.connect(_on_load_pressed)
+	$LoadScreen/LoadBox/DirButton.pressed.connect(_on_directory_load)
+	$LoadScreen/LoadBox/AtlasButton.pressed.connect(_on_atlas_load)
 	$EditorScreen/TopBar/BackButton.pressed.connect(_on_back_pressed)
 	$EditorScreen/TopBar/SaveButton.pressed.connect(_on_save_pressed)
 	$EditorScreen/TopBar/LeftCols.value_changed.connect(func(v):
@@ -76,7 +79,7 @@ func _connect_signals() -> void:
 
 # ------- actions -------
 
-func _on_load_pressed() -> void:
+func _on_directory_load() -> void:
 	var fd = EditorFileDialog.new()
 	fd.file_mode = EditorFileDialog.FILE_MODE_OPEN_DIR
 	fd.access = EditorFileDialog.ACCESS_RESOURCES
@@ -90,14 +93,133 @@ func _on_load_pressed() -> void:
 	fd.popup_centered_ratio(0.6)
 
 
+func _on_atlas_load() -> void:
+	_show_atlas_params()
+
+
+func _show_atlas_params(file_path: String = "") -> void:
+	var dlg = ConfirmationDialog.new()
+	dlg.title = "图集参数"
+	dlg.ok_button_text = "确认"
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+
+	# File path row
+	var hrow = HBoxContainer.new()
+	hrow.add_child(_make_label("文件路径:"))
+	var path_edit = LineEdit.new(); path_edit.text = file_path; path_edit.custom_minimum_size = Vector2(200, 0); path_edit.size_flags_horizontal = 3
+	hrow.add_child(path_edit)
+	var browse_btn = Button.new(); browse_btn.text = "浏览..."
+	browse_btn.pressed.connect(func():
+		var fd = EditorFileDialog.new()
+		fd.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILE
+		fd.access = EditorFileDialog.ACCESS_RESOURCES
+		fd.add_filter("*.png", "PNG Images")
+		if not _last_atlas_dir.is_empty():
+			fd.current_dir = _last_atlas_dir
+		fd.file_selected.connect(func(p): path_edit.text = p; fd.queue_free())
+		fd.canceled.connect(func(): fd.queue_free())
+		dlg.add_child(fd)
+		fd.popup_centered_ratio(0.6)
+	)
+	hrow.add_child(browse_btn)
+	vbox.add_child(hrow)
+
+	# Columns row
+	hrow = HBoxContainer.new()
+	hrow.add_child(_make_label("列数:"))
+	var cols_spin = SpinBox.new(); cols_spin.min_value = 1; cols_spin.max_value = 50; cols_spin.value = 4; cols_spin.rounded = true
+	hrow.add_child(cols_spin); vbox.add_child(hrow)
+
+	# Rows row
+	hrow = HBoxContainer.new()
+	hrow.add_child(_make_label("行数:"))
+	var rows_spin = SpinBox.new(); rows_spin.min_value = 1; rows_spin.max_value = 50; rows_spin.value = 4; rows_spin.rounded = true
+	hrow.add_child(rows_spin); vbox.add_child(hrow)
+
+	dlg.add_child(vbox)
+
+	dlg.confirmed.connect(func():
+		var path = path_edit.text
+		var cols = cols_spin.value as int
+		var rows = rows_spin.value as int
+		if path.is_empty(): return
+		var tmpl = path.get_file().get_basename()
+		_load_atlas(path, cols, rows, tmpl)
+		dlg.queue_free()
+	)
+	dlg.canceled.connect(func(): dlg.queue_free())
+	add_child(dlg)
+	dlg.popup_centered_ratio(0.5)
+
+
+func _make_label(text: String) -> Label:
+	var l = Label.new()
+	l.text = text
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return l
+
+
+func _load_atlas(file_path: String, columns: int, rows: int, name_template: String) -> void:
+	var tex = load(file_path) as Texture2D
+	if tex == null: return
+	var img = tex.get_image()
+	if img == null: return
+
+	var dir = file_path.get_base_dir()
+	_dir_path = dir; _last_dir = dir; _last_atlas_dir = dir; _save_prefs()
+	_atlas_info = {"path": file_path.get_file(), "columns": columns, "rows": rows, "name_template": name_template}
+	_tile_data.clear(); _tile_textures.clear()
+	_dirty = false; _update_save_button()
+
+	var tw = img.get_width() / columns
+	var th = img.get_height() / rows
+
+	for row in range(rows):
+		for col in range(columns):
+			var tile_name = "%s_%d_%d" % [name_template, row, col]
+			var region = img.get_region(Rect2i(col * tw, row * th, tw, th))
+			var region_tex = ImageTexture.create_from_image(region)
+			_tile_data[tile_name] = {
+				"texture_path": file_path,
+				"color": Color.WHITE,
+				"connectors": [[], [], [], []]
+			}
+			_tile_textures[tile_name] = region_tex
+
+	# Load existing config if present
+	if FileAccess.file_exists(dir + "/modules.json"):
+		_load_modules_json(dir + "/modules.json")
+
+	_refresh_tile_grids()
+	_dir_label.text = dir
+	_load_screen.hide(); _editor_screen.show()
+
+
 func _load_directory(path: String) -> void:
 	_dir_path = path; _last_dir = path; _save_prefs()
+	_atlas_info = {}
 	_tile_data.clear(); _tile_textures.clear()
 	_dirty = false
 	_update_save_button()
 
 	var dir = DirAccess.open(path)
 	if dir == null: return
+
+	# Check if modules.json has atlas info — reload via atlas mode
+	var config_path = path + "/modules.json"
+	if FileAccess.file_exists(config_path):
+		var f = FileAccess.open(config_path, FileAccess.READ)
+		if f:
+			var json = JSON.parse_string(f.get_as_text())
+			if json is Dictionary and json.has("atlas"):
+				var a = json["atlas"]
+				var atlas_path = path + "/" + a["path"]
+				if FileAccess.file_exists(atlas_path):
+					_load_atlas(atlas_path, a["columns"] as int, a["rows"] as int, a["name_template"])
+					return
+
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
 	while file_name != "":
@@ -415,6 +537,8 @@ func _on_save_pressed() -> void:
 		modules.append(entry)
 
 	var out = {"connector_colors": {}, "modules": modules}
+	if not _atlas_info.is_empty():
+		out["atlas"] = _atlas_info
 	var file = FileAccess.open(_dir_path + "/modules.json", FileAccess.WRITE)
 	if file: file.store_string(JSON.stringify(out, "\t")); file.close()
 	_dirty = false
@@ -430,12 +554,13 @@ func _load_prefs() -> void:
 		_last_dir = json.get("last_dir", "")
 		if json.has("left_cols"): _left_cols = json["left_cols"] as int
 		if json.has("right_cols"): _right_cols = json["right_cols"] as int
+		if json.has("last_atlas_dir"): _last_atlas_dir = json["last_atlas_dir"]
 
 
 func _save_prefs() -> void:
 	var f = FileAccess.open(_PREFS_PATH, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"last_dir": _last_dir, "left_cols": _left_cols, "right_cols": _right_cols}))
+		f.store_string(JSON.stringify({"last_dir": _last_dir, "left_cols": _left_cols, "right_cols": _right_cols, "last_atlas_dir": _last_atlas_dir}))
 
 
 func _on_back_pressed() -> void:
