@@ -248,22 +248,29 @@ func _xy_to_idx(x: int, y: int) -> int:
 
 # ------- static verification -------
 
-## Try [attempts] random seeds on [module_set] at [width]x[height].
-## Returns a Dictionary {seeds: int, successes: int, first_fail_seed: int}
+## Try [attempts] deterministic seeds on [module_set] at [width]x[height].
+## Returns a Dictionary {attempts: int, successes: int, first_fail: int}
 static func verify(module_set: WFCModuleSet, width: int = 10, height: int = 10, attempts: int = 20) -> Dictionary:
 	var success := 0
 	var first_fail := -1
 	var first_diag: Dictionary = {}
+	var total_violations := 0
+	var violation_samples: Array = []
+
 	for i in range(attempts):
 		var solver = WFCSolver.new()
 		solver.init(module_set, width, height, false)
-		var result = solver.solve(-1)
+		var result = solver.solve(i)
 		if result.success:
 			success += 1
+			var violations = result.validate()
+			total_violations += violations.size()
+			if violations.size() > 0 and violation_samples.size() < 5:
+				for v in violations:
+					violation_samples.append(v)
 		elif first_fail < 0:
 			first_fail = i
 			first_diag = solver._last_contradiction.duplicate()
-			# Resolve module names
 			if first_diag.has("from_cell") and first_diag["from_cell"].x >= 0:
 				var fc = first_diag["from_cell"] as Vector2i
 				var mods = first_diag.get("from_modules", [])
@@ -273,7 +280,15 @@ static func verify(module_set: WFCModuleSet, width: int = 10, height: int = 10, 
 				first_diag["from_module_names"] = names
 			if first_diag.has("from_collapsed") and first_diag["from_collapsed"] >= 0:
 				first_diag["from_module_name"] = module_set.modules[first_diag["from_collapsed"]].module_name
-	return {"attempts": attempts, "successes": success, "first_fail": first_fail, "first_contradiction": first_diag}
+
+	return {
+		"attempts": attempts,
+		"successes": success,
+		"first_fail": first_fail,
+		"first_contradiction": first_diag,
+		"total_violations": total_violations,
+		"violation_samples": violation_samples.slice(0, 10),
+	}
 
 
 func _slog(msg: String) -> void:

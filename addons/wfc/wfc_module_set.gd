@@ -42,17 +42,12 @@ func _modules_compatible(a_idx: int, b_idx: int, direction: String) -> bool:
 	var a_r: int = mod_a.connect_id_r.get(direction, -1)
 	var b_l: int = mod_b.connect_id_l.get(opp, -1)
 	var b_r: int = mod_b.connect_id_r.get(opp, -1)
-	return _cid_match(a_l, b_r) or _cid_match(a_r, b_l)
+
+	return _cross_check(a_l, b_r) or _cross_check(a_r, b_l)
 
 
-func _cid_match(v1: int, v2: int) -> bool:
-	if v1 >= 0 and v2 >= 0:
-		return v1 == v2
-	# Both unconstrained → compatible
-	if v1 < 0 and v2 < 0:
-		return true
-	# One constrained, other unconstrained → incompatible
-	return false
+func _cross_check(a_value: int, b_value: int) -> bool:
+	return a_value >= 0 and b_value >= 0 and a_value == b_value
 
 
 func are_compatible(a_idx: int, b_idx: int, direction: String) -> bool:

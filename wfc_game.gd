@@ -8,12 +8,13 @@ extends Node2D
 @export var rng_seed: int = -1
 @export var periodic: bool = false
 @export var cell_pixels: int = 48
-@export var config_path: String = "res://assets/Tileset/modules.json"
+@export var config_path: String = "res://assets/test/strict_modules.json"
 
 var _texture_dir: String = ""
 var _atlas_image: Image = null
 var _atlas_cols: int = 0
 var _atlas_rows: int = 0
+var _atlas_regions: Dictionary = {}  # module_name -> Image
 var _tile_map: TileMapLayer
 var _result: WFCSolverResult
 var _tile_source_id: int = -1
@@ -54,6 +55,8 @@ func _build_tile_set() -> void:
 
 		if _atlas_image:
 			img = _extract_atlas_region(mod_name)
+			if img:
+				img = img.duplicate()  # don't mutate cached copy
 		else:
 			img = _load_image(_texture_path_for_module(mod_name))
 
@@ -63,9 +66,13 @@ func _build_tile_set() -> void:
 			img.convert(Image.FORMAT_RGBA8)
 		if img.get_width() != cell_pixels or img.get_height() != cell_pixels:
 			img.resize(cell_pixels, cell_pixels, Image.INTERPOLATE_NEAREST)
-		var rot = _get_module_rotation(mod_name)
-		for _r in range(rot):
-			img.rotate_90(CLOCKWISE)
+
+		# Rotation for atlas mode is pre-computed; non-atlas uses on-the-fly rotate
+		if not _atlas_image:
+			var rot = _get_module_rotation(mod_name)
+			for _r in range(rot):
+				img.rotate_90(CLOCKWISE)
+
 		atlas_image.blit_rect(img, Rect2i(0, 0, cell_pixels, cell_pixels), Vector2i(i * cell_pixels, 0))
 
 	var atlas_texture = ImageTexture.create_from_image(atlas_image)
@@ -100,17 +107,32 @@ func _load_atlas_if_present() -> void:
 	_atlas_cols = a["columns"] as int
 	_atlas_rows = a["rows"] as int
 
+	# Pre-compute regions for all modules and their rotation variants
+	var tw: int = int(float(_atlas_image.get_width()) / float(_atlas_cols))
+	var th: int = int(float(_atlas_image.get_height()) / float(_atlas_rows))
+	var name_tmpl = a["name_template"]
+
+	for r in range(_atlas_rows):
+		for c in range(_atlas_cols):
+			# Base module name: tileset_0_0
+			var base_name = "%s_%d_%d" % [name_tmpl, r, c]
+			var region = _atlas_image.get_region(Rect2i(c * tw, r * th, tw, th))
+			# Rotation 0 (no rotate) — just the base name without suffix
+			_atlas_regions[base_name] = region
+
+			# Also pre-compute for rotation variants (rotated by config loader): base_name_X
+			# The config loader only adds suffix when rotations are enabled.
+			# We compute all 4 in case any rotation is enabled.
+			for rot in range(1, 4):
+				var vname = "%s_%d" % [base_name, rot]
+				var rimg = region.duplicate()
+				for _r in range(rot):
+					rimg.rotate_90(CLOCKWISE)
+				_atlas_regions[vname] = rimg
+
 
 func _extract_atlas_region(module_name: String) -> Image:
-	# Parse "prefix_row_col" → row, col
-	var parts = module_name.rsplit("_", true, 2)
-	if parts.size() < 2: return null
-	var col = parts[parts.size() - 1].to_int()
-	var row = parts[parts.size() - 2].to_int()
-
-	var tw: int = _atlas_image.get_width() / _atlas_cols
-	var th: int = _atlas_image.get_height() / _atlas_rows
-	return _atlas_image.get_region(Rect2i(col * tw, row * th, tw, th))
+	return _atlas_regions.get(module_name)
 
 
 func _texture_path_for_module(module_name: String) -> String:
@@ -172,12 +194,96 @@ func _generate() -> void:
 				f.close()
 		return
 	_apply_result()
+	_validate_result()
 
 func _apply_result() -> void:
 	for y in range(_result.height):
 		for x in range(_result.width):
 			var mod_idx = _result.get_module_at(x, y)
 			_tile_map.set_cell(Vector2i(x, y), _tile_source_id, Vector2i(mod_idx, 0))
+
+
+func _validate_result() -> void:
+	var log_path := "user://wfc_validate.log"
+	var f = FileAccess.open(log_path, FileAccess.WRITE)
+	if f == null: return
+
+	f.store_string("=== WFC Generation Integrity Report ===\n")
+	f.store_string("Grid: %dx%d  Modules: %d\n\n" % [_result.width, _result.height, module_set.modules.size()])
+
+	# ----- 0. Config connections dump (who can connect to whom, on which sides) -----
+	f.store_string("--- Config Connections ---\n")
+	for i in range(module_set.modules.size()):
+		var ma = module_set.modules[i]
+		for j in range(i, module_set.modules.size()):
+			var mb = module_set.modules[j]
+			var pairs: Array = []
+			for dir in ["north", "east", "south", "west"]:
+				if module_set.are_compatible(i, j, dir):
+					pairs.append(dir)
+			if not pairs.is_empty():
+				f.store_string("  %-30s <-> %-30s : %s\n" % [ma.module_name, mb.module_name, ",".join(pairs)])
+	f.store_string("\n")
+
+	# ----- 1. Generated grid -----
+	f.store_string("--- Generated Grid ---\n")
+	var gen_grid: Array = []
+	for y in range(_result.height):
+		var row: Array = []
+		for x in range(_result.width):
+			row.append(_result.get_module_at(x, y))
+		gen_grid.append(row)
+		f.store_string("  %s\n" % str(row))
+
+	# ----- 2. Rendered grid readback -----
+	f.store_string("\n--- Rendered Grid (TileMap) ---\n")
+	var ren_mismatches := 0
+	for y in range(_result.height):
+		var row: Array = []
+		for x in range(_result.width):
+			var src_id = _tile_map.get_cell_source_id(Vector2i(x, y))
+			var atlas = _tile_map.get_cell_atlas_coords(Vector2i(x, y))
+			var idx = atlas.x if src_id == _tile_source_id else -1
+			row.append(idx)
+			if idx != gen_grid[y][x]:
+				ren_mismatches += 1
+		f.store_string("  %s\n" % str(row))
+	f.store_string("  Mismatches: %d\n\n" % ren_mismatches)
+
+	# ----- 3. Edge-by-edge: check every adjacent pair against config -----
+	f.store_string("--- Edge-by-Edge Validation ---\n")
+	var opp = {"east": "west", "south": "north"}
+	var dxy = {"east": Vector2i(1, 0), "south": Vector2i(0, 1)}
+	var gen_violations := 0
+
+	for dir in dxy:
+		var d = dxy[dir]
+		for y in range(_result.height):
+			for x in range(_result.width):
+				var a_idx = gen_grid[y][x]; if a_idx < 0: continue
+				var nx = x + d.x; var ny = y + d.y
+				if nx >= _result.width or ny >= _result.height: continue
+				var b_idx = gen_grid[ny][nx]; if b_idx < 0: continue
+
+				var ma = module_set.modules[a_idx]; var mb = module_set.modules[b_idx]
+				var ok = module_set.are_compatible(a_idx, b_idx, dir)
+				var al = ma.connect_id_l.get(dir, -1); var ar = ma.connect_id_r.get(dir, -1)
+				var bl = mb.connect_id_l.get(opp[dir], -1); var br = mb.connect_id_r.get(opp[dir], -1)
+
+				f.store_string("  (%d,%d) %s: %s(L%d,R%d) <-> %s(L%d,R%d) %s\n" % [
+					x, y, dir, ma.module_name, al, ar, mb.module_name, bl, br,
+					"OK" if ok else "FAIL"
+				])
+				if not ok:
+					gen_violations += 1
+
+	f.store_string("\n=== Summary ===\n")
+	f.store_string("Gen vs Ren mismatches: %d\n" % ren_mismatches)
+	f.store_string("Gen violations: %d\n" % gen_violations)
+	var all_ok = ren_mismatches == 0 and gen_violations == 0
+	f.store_string("INTEGRITY: %s\n" % ("PASS" if all_ok else "FAIL"))
+	f.close()
+
 
 func generate() -> WFCSolverResult:
 	_generate()

@@ -1,0 +1,13 @@
+{
+	"connector_colors": {},
+	"modules": [
+		{
+			"name": "1",
+			"color": "#d06b4c",
+			"weight": 1.0,
+			"cl": [1, 1, 1, 1],
+			"cr": [1, 1, 1, 1],
+			"rotate": [1, 2, 3]
+		}
+	]
+}
