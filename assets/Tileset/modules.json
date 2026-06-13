@@ -1,256 +1,735 @@
 {
 	"atlas": {
-		"columns": 4,
+		"columns": 4.0,
 		"name_template": "t_cave_tilesheet",
 		"path": "t_cave_tilesheet.png",
-		"rows": 4
-	},
-	"connector_colors": {
-
+		"rows": 4.0
 	},
 	"modules": [
 		{
-			"cl": [
-				139,
-				150,
-				143,
-				149
-			],
-			"cr": [
-				-1,
-				132,
-				-1,
-				130
-			],
-			"name": "t_cave_tilesheet_0_0"
+			"edges": {
+				"east": {
+					"left": [
+						3,
+						6,
+						8,
+						13,
+						15,
+						17,
+						19,
+						91
+					],
+					"right": [
+						1
+					]
+				},
+				"north": {
+					"left": [
+						4,
+						9
+					],
+					"right": []
+				},
+				"south": {
+					"left": [
+						10,
+						11,
+						12
+					],
+					"right": []
+				},
+				"west": {
+					"left": [
+						1,
+						2,
+						5,
+						7,
+						14,
+						16,
+						18,
+						20
+					],
+					"right": [
+						90
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_0_0",
+			"weight": 1.0
 		},
 		{
-			"cl": [
-				7,
-				32,
-				26,
-				31
-			],
-			"cr": [
-				18,
-				133,
-				134,
-				135
-			],
-			"name": "t_cave_tilesheet_0_1"
+			"edges": {
+				"east": {
+					"left": [
+						23,
+						28,
+						30,
+						35,
+						38,
+						41,
+						42
+					],
+					"right": [
+						2,
+						21
+					]
+				},
+				"north": {
+					"left": [
+						29
+					],
+					"right": [
+						22
+					]
+				},
+				"south": {
+					"left": [
+						22,
+						25,
+						27,
+						31,
+						32,
+						34,
+						37
+					],
+					"right": [
+						4
+					]
+				},
+				"west": {
+					"left": [
+						21,
+						24,
+						26,
+						33,
+						36,
+						39,
+						40,
+						43
+					],
+					"right": [
+						3
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_0_1",
+			"weight": 0.2
 		},
 		{
-			"cl": [
-				37,
-				44,
-				41,
-				45
-			],
-			"cr": [
-				21,
-				136,
-				-1,
-				137
-			],
-			"name": "t_cave_tilesheet_0_2"
+			"edges": {
+				"east": {
+					"left": [
+						45,
+						46,
+						49,
+						50,
+						55,
+						57,
+						60
+					],
+					"right": [
+						5,
+						24
+					]
+				},
+				"north": {
+					"left": [
+						59
+					],
+					"right": [
+						25
+					]
+				},
+				"south": {
+					"left": [
+						52,
+						54,
+						56
+					],
+					"right": []
+				},
+				"west": {
+					"left": [
+						44,
+						47,
+						48,
+						51,
+						53,
+						58
+					],
+					"right": [
+						6,
+						23,
+						60
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_0_2",
+			"weight": 1.0
 		},
 		{
-			"cl": [
-				-1,
-				61,
-				55,
-				60
-			],
-			"cr": [
-				47,
-				138,
-				139,
-				140
-			],
-			"name": "t_cave_tilesheet_0_3"
+			"edges": {
+				"east": {
+					"left": [
+						62,
+						63,
+						70,
+						71,
+						73,
+						75
+					],
+					"right": [
+						7,
+						26,
+						58
+					]
+				},
+				"north": {
+					"left": [],
+					"right": [
+						27,
+						61
+					]
+				},
+				"south": {
+					"left": [
+						61,
+						64,
+						65,
+						66,
+						68
+					],
+					"right": [
+						9,
+						29,
+						59
+					]
+				},
+				"west": {
+					"left": [
+						67,
+						69,
+						72,
+						74,
+						76
+					],
+					"right": [
+						8,
+						28,
+						57,
+						62
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_0_3",
+			"weight": 1.0
 		},
 		{
-			"cl": [
-				67,
-				66,
-				65,
-				-1
-			],
-			"cr": [
-				141,
-				-1,
-				-1,
-				119
-			],
+			"edges": {
+				"east": {
+					"left": [
+						77,
+						78,
+						82
+					],
+					"right": []
+				},
+				"north": {
+					"left": [
+						83
+					],
+					"right": [
+						10,
+						31,
+						56,
+						64
+					]
+				},
+				"south": {
+					"left": [
+						80,
+						81
+					],
+					"right": []
+				},
+				"west": {
+					"left": [
+						79,
+						95
+					],
+					"right": [
+						30,
+						55,
+						63,
+						91,
+						134
+					]
+				}
+			},
 			"name": "t_cave_tilesheet_1_0",
 			"weight": 1.0
 		},
 		{
-			"cl": [
-				72,
-				70,
-				-1,
-				71
-			],
-			"cr": [
-				142,
-				-1,
-				-1,
-				68
-			],
+			"edges": {
+				"east": {
+					"left": [
+						85,
+						86
+					],
+					"right": [
+						84
+					]
+				},
+				"north": {
+					"left": [
+						89
+					],
+					"right": [
+						11,
+						32,
+						54,
+						65
+					]
+				},
+				"south": {
+					"left": [
+						87
+					],
+					"right": []
+				},
+				"west": {
+					"left": [
+						84,
+						88
+					],
+					"right": [
+						77
+					]
+				}
+			},
 			"name": "t_cave_tilesheet_1_1",
 			"weight": 1.0
 		},
 		{
-			"cl": [
-				76,
-				-1,
-				75,
-				74
-			],
-			"cr": [
-				143,
-				118,
-				-1,
-				69
-			],
+			"edges": {
+				"east": {
+					"left": [
+						90,
+						92,
+						94
+					],
+					"right": [
+						33,
+						53,
+						67,
+						135
+					]
+				},
+				"north": {
+					"left": [
+						98
+					],
+					"right": [
+						12,
+						34,
+						52,
+						66
+					]
+				},
+				"south": {
+					"left": [
+						93,
+						96
+					],
+					"right": []
+				},
+				"west": {
+					"left": [
+						97
+					],
+					"right": [
+						78,
+						85
+					]
+				}
+			},
 			"name": "t_cave_tilesheet_1_2",
 			"weight": 1.0
 		},
 		{
-			"cl": [
-				79,
-				87,
-				89,
-				88
-			],
-			"cr": [
-				55,
-				144,
-				-1,
-				145
-			],
-			"name": "t_cave_tilesheet_1_3"
+			"edges": {
+				"east": {
+					"left": [
+						99
+					],
+					"right": [
+						14,
+						36,
+						51,
+						69,
+						79
+					]
+				},
+				"north": {
+					"left": [],
+					"right": [
+						37,
+						68
+					]
+				},
+				"south": {
+					"left": [
+						101,
+						102
+					],
+					"right": []
+				},
+				"west": {
+					"left": [
+						100
+					],
+					"right": [
+						13,
+						35,
+						50,
+						70,
+						92
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_1_3",
+			"weight": 1.0
 		},
 		{
-			"cl": [
-				-1,
-				95,
-				94,
-				96
-			],
-			"cr": [
-				91,
-				-1,
-				-1,
-				146
-			],
-			"name": "t_cave_tilesheet_2_0"
+			"edges": {
+				"east": {
+					"left": [
+						104,
+						107
+					],
+					"right": []
+				},
+				"north": {
+					"left": [
+						103
+					],
+					"right": [
+						80
+					]
+				},
+				"south": {
+					"left": [
+						106
+					],
+					"right": [
+						103
+					]
+				},
+				"west": {
+					"left": [
+						105,
+						108
+					],
+					"right": [
+						15,
+						38,
+						49,
+						71,
+						99
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_2_0",
+			"weight": 1.0
 		},
 		{
-			"cl": [
-				103,
-				106,
-				107,
-				102
-			],
-			"cr": [
-				107,
-				-1,
-				-1,
-				106
-			],
-			"name": "t_cave_tilesheet_2_1"
+			"edges": {
+				"east": {
+					"left": [
+						109,
+						110,
+						117,
+						118
+					],
+					"right": []
+				},
+				"north": {
+					"left": [
+						112,
+						114,
+						119
+					],
+					"right": [
+						111
+					]
+				},
+				"south": {
+					"left": [
+						111,
+						116
+					],
+					"right": []
+				},
+				"west": {
+					"left": [
+						113,
+						115
+					],
+					"right": [
+						104,
+						110
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_2_1",
+			"weight": 0.5
 		},
 		{
-			"cl": [
-				108,
-				113,
-				112,
-				111
-			],
-			"cr": [
-				73,
-				147,
-				108,
-				97
-			],
-			"name": "t_cave_tilesheet_2_2"
+			"edges": {
+				"east": {
+					"left": [
+						121,
+						123
+					],
+					"right": [
+						16,
+						39,
+						48,
+						72,
+						100
+					]
+				},
+				"north": {
+					"left": [
+						120
+					],
+					"right": [
+						93
+					]
+				},
+				"south": {
+					"left": [
+						122
+					],
+					"right": [
+						120
+					]
+				},
+				"west": {
+					"left": [],
+					"right": [
+						109,
+						127
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_2_2",
+			"weight": 1.0
 		},
 		{
-			"cl": [
-				-1,
-				120,
-				115,
-				121
-			],
-			"cr": [
-				115,
-				149,
-				-1,
-				148
-			],
-			"name": "t_cave_tilesheet_2_3"
+			"edges": {
+				"east": {
+					"left": [],
+					"right": [
+						18,
+						40,
+						47,
+						74,
+						95,
+						105
+					]
+				},
+				"north": {
+					"left": [
+						124
+					],
+					"right": [
+						101
+					]
+				},
+				"south": {
+					"left": [
+						125
+					],
+					"right": [
+						124
+					]
+				},
+				"west": {
+					"left": [],
+					"right": [
+						17,
+						41,
+						46,
+						73,
+						94,
+						121
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_2_3",
+			"weight": 1.0
 		},
 		{
-			"cl": [
-				-1,
-				122,
-				123,
-				-1
-			],
-			"cr": [
-				94,
-				98,
-				101,
-				70
-			],
-			"name": "t_cave_tilesheet_3_0"
+			"edges": {
+				"east": {
+					"left": [],
+					"right": [
+						113,
+						129
+					]
+				},
+				"north": {
+					"left": [],
+					"right": [
+						81,
+						106
+					]
+				},
+				"south": {
+					"left": [],
+					"right": [
+						112,
+						128
+					]
+				},
+				"west": {
+					"left": [
+						126
+					],
+					"right": [
+						82,
+						86
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_3_0",
+			"weight": 1.0
 		},
 		{
-			"cl": [
-				127,
-				126,
-				125,
-				124
-			],
-			"cr": [
-				125,
-				124,
-				103,
-				122
-			],
-			"name": "t_cave_tilesheet_3_1"
+			"edges": {
+				"east": {
+					"left": [
+						127,
+						132
+					],
+					"right": [
+						115,
+						131
+					]
+				},
+				"north": {
+					"left": [
+						128,
+						130,
+						133
+					],
+					"right": [
+						87,
+						116
+					]
+				},
+				"south": {
+					"left": [],
+					"right": [
+						114,
+						130
+					]
+				},
+				"west": {
+					"left": [
+						129,
+						131
+					],
+					"right": [
+						107,
+						117
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_3_1",
+			"weight": 1.0
 		},
 		{
-			"cl": [
-				-1,
-				-1,
-				-1,
-				-1
-			],
-			"cr": [
-				112,
-				74,
-				127,
-				126
-			],
-			"name": "t_cave_tilesheet_3_2"
+			"edges": {
+				"east": {
+					"left": [],
+					"right": [
+						88,
+						97,
+						126
+					]
+				},
+				"north": {
+					"left": [],
+					"right": [
+						96,
+						122
+					]
+				},
+				"south": {
+					"left": [],
+					"right": [
+						119,
+						133
+					]
+				},
+				"west": {
+					"left": [],
+					"right": [
+						118,
+						132
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_3_2",
+			"weight": 1.0
 		},
 		{
-			"cl": [
-				-1,
-				130,
-				-1,
-				-1
-			],
-			"cr": [
-				114,
-				96,
-				76,
-				150
-			],
-			"name": "t_cave_tilesheet_3_3"
+			"edges": {
+				"east": {
+					"left": [
+						134
+					],
+					"right": [
+						20,
+						43,
+						44,
+						76,
+						108
+					]
+				},
+				"north": {
+					"left": [],
+					"right": [
+						102,
+						125
+					]
+				},
+				"south": {
+					"left": [],
+					"right": [
+						83,
+						89,
+						98
+					]
+				},
+				"west": {
+					"left": [
+						135
+					],
+					"right": [
+						19,
+						42,
+						45,
+						75,
+						123
+					]
+				}
+			},
+			"name": "t_cave_tilesheet_3_3",
+			"weight": 1.0
 		}
-	]
+	],
+	"version": 1
 }
