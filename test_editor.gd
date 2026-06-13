@@ -94,11 +94,13 @@ func _test_save_load_roundtrip() -> void:
 	panel._dir_path = temp_dir
 	panel._on_save_pressed()
 
+	assert(FileAccess.file_exists(temp_dir + "/modules_editor.json"),
+		"modules_editor.json should be saved")
 	assert(FileAccess.file_exists(temp_dir + "/modules.json"),
-		"modules.json should be saved")
+		"runtime modules.json should be exported")
 
 	var panel2 = _make_panel_with_test_data()
-	panel2._load_modules_json(temp_dir + "/modules.json")
+	panel2._load_editor_json(temp_dir + "/modules_editor.json")
 
 	assert(panel2._is_connected_variant("grass", "north", "water"),
 		"Grass north -> water should survive roundtrip")
@@ -111,6 +113,15 @@ func _test_save_load_roundtrip() -> void:
 	assert(not panel2._is_connected_variant("grass", "south", "water"),
 		"Non-connected direction should remain unconnected")
 
+	var runtime_json = JSON.parse_string(FileAccess.get_file_as_string(temp_dir + "/modules.json"))
+	assert(runtime_json is Dictionary and runtime_json.has("modules"),
+		"runtime modules.json should use export format")
+	assert(runtime_json["modules"][0].has("edges"),
+		"runtime modules should contain compiled edges")
+	assert(not runtime_json["modules"][0].has("connectors"),
+		"runtime modules should not contain editor connectors")
+
+	DirAccess.remove_absolute(temp_dir + "/modules_editor.json")
 	DirAccess.remove_absolute(temp_dir + "/modules.json")
 	DirAccess.remove_absolute(temp_dir)
 	panel.queue_free(); panel2.queue_free()

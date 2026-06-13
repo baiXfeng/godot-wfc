@@ -14,6 +14,8 @@ var _selected_candidate: String = ""
 const _DIRECTIONS = ["north", "east", "south", "west"]
 const _PREFS_PATH := "user://wfc_editor_prefs.json"
 const DEBUG_LOG := false
+const _EDITOR_CONFIG_NAME := "modules_editor.json"
+const _RUNTIME_CONFIG_NAME := "modules.json"
 
 var _last_dir: String = ""
 var _last_atlas_dir: String = ""
@@ -188,9 +190,9 @@ func _load_atlas(file_path: String, columns: int, rows: int, name_template: Stri
 			}
 			_tile_textures[tile_name] = region_tex
 
-	# Load existing config if present
-	if FileAccess.file_exists(dir + "/modules.json"):
-		_load_modules_json(dir + "/modules.json")
+	# Load existing editor config if present
+	if FileAccess.file_exists(_editor_config_path(dir)):
+		_load_editor_json(_editor_config_path(dir))
 
 	_refresh_tile_grids()
 	_dir_label.text = dir
@@ -207,18 +209,13 @@ func _load_directory(path: String) -> void:
 	var dir = DirAccess.open(path)
 	if dir == null: return
 
-	# Check if modules.json has atlas info — reload via atlas mode
-	var config_path = path + "/modules.json"
-	if FileAccess.file_exists(config_path):
-		var f = FileAccess.open(config_path, FileAccess.READ)
-		if f:
-			var json = JSON.parse_string(f.get_as_text())
-			if json is Dictionary and json.has("atlas"):
-				var a = json["atlas"]
-				var atlas_path = path + "/" + a["path"]
-				if FileAccess.file_exists(atlas_path):
-					_load_atlas(atlas_path, a["columns"] as int, a["rows"] as int, a["name_template"])
-					return
+	var editor_config_path = _editor_config_path(path)
+	var editor_atlas = _read_editor_atlas(editor_config_path)
+	if not editor_atlas.is_empty():
+		var atlas_path = path + "/" + editor_atlas["path"]
+		if FileAccess.file_exists(atlas_path):
+			_load_atlas(atlas_path, editor_atlas["columns"] as int, editor_atlas["rows"] as int, editor_atlas["name_template"])
+			return
 
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
@@ -234,41 +231,41 @@ func _load_directory(path: String) -> void:
 			if tex: _tile_textures[base] = tex
 		file_name = dir.get_next()
 
-	if FileAccess.file_exists(path + "/modules.json"):
-		_load_modules_json(path + "/modules.json")
+	if FileAccess.file_exists(editor_config_path):
+		_load_editor_json(editor_config_path)
 
 	_refresh_tile_grids()
 	_dir_label.text = path
 	_load_screen.hide(); _editor_screen.show()
 
 
-func _load_modules_json(path: String) -> void:
+func _load_editor_json(path: String) -> void:
 	var file = FileAccess.open(path, FileAccess.READ)
 	if file == null: return
 	var json = JSON.parse_string(file.get_as_text())
-	if json == null or not json.has("modules"): return
+	if not json is Dictionary or not json.has("tiles"): return
 
-	for entry in json["modules"]:
-		var name = entry.get("name", "")
-		if not _tile_data.has(name): continue
+	if json.has("atlas") and json["atlas"] is Dictionary:
+		_atlas_info = (json["atlas"] as Dictionary).duplicate(true)
 
-		# Parse cl/cr into internal tag format
-		var cl = entry.get("cl", [])
-		var cr = entry.get("cr", [])
-		if cl is Array and cr is Array and cl.size() == 4 and cr.size() == 4:
-			var tags: Array = []
-			tags.resize(4)
-			for i in range(4):
-				var side_tags: Array = []
-				for id in _parse_connector_ids(cl[i]):
-					side_tags.append("L%d" % id)
-				for id in _parse_connector_ids(cr[i]):
-					side_tags.append("R%d" % id)
-				tags[i] = side_tags
-			_tile_data[name]["connectors"] = tags
-
-		if entry.has("weight"): _tile_data[name]["weight"] = entry["weight"]
-		if entry.has("rotate"): _tile_data[name]["rotate"] = entry["rotate"]
+	var tiles: Dictionary = json["tiles"]
+	for name in tiles:
+		if not _tile_data.has(name):
+			continue
+		var tile_entry = tiles[name]
+		if not tile_entry is Dictionary:
+			continue
+		var data: Dictionary = tile_entry
+		if data.has("connectors"):
+			var parsed = _parse_editor_connectors(data["connectors"])
+			if parsed.size() == 4:
+				_tile_data[name]["connectors"] = parsed
+		if data.has("weight"):
+			_tile_data[name]["weight"] = data["weight"]
+		if data.has("rotate") and data["rotate"] is Array:
+			_tile_data[name]["rotate"] = (data["rotate"] as Array).duplicate()
+		else:
+			_tile_data[name].erase("rotate")
 
 
 func _refresh_tile_grids() -> void:
@@ -520,71 +517,151 @@ func _remove_connection_variant(main: String, dir: String, cand: String) -> void
 
 func _on_save_pressed() -> void:
 	if _dir_path.is_empty(): return
-	var modules = []
-	for tile_name in _tile_data:
-		var data = _tile_data[tile_name]
-		var tags_per_side = data.get("connectors", [[],[],[],[]])
-		var cl: Array = []
-		var cr: Array = []
-		for i in range(4):
-			var cl_ids: Array = []
-			var cr_ids: Array = []
-			for tag in tags_per_side[i]:
-				if tag.begins_with("L"):
-					cl_ids.append(tag.substr(1).to_int())
-				elif tag.begins_with("R"):
-					cr_ids.append(tag.substr(1).to_int())
-			cl.append(_format_connector_ids(cl_ids))
-			cr.append(_format_connector_ids(cr_ids))
-
-		var entry = {"name": tile_name, "cl": cl, "cr": cr}
-		if data.has("weight"): entry["weight"] = data["weight"]
-		if data.has("rotate"): entry["rotate"] = data["rotate"]
-		modules.append(entry)
-
-	var out = {"connector_colors": {}, "modules": modules}
-	if not _atlas_info.is_empty():
-		out["atlas"] = _atlas_info
-	var file = FileAccess.open(_dir_path + "/modules.json", FileAccess.WRITE)
-	if file: file.store_string(JSON.stringify(out, "\t")); file.close()
+	_save_editor_json()
+	_save_runtime_modules_json()
 	_dirty = false
 	_update_save_button()
 
 
-func _parse_connector_ids(value) -> Array:
-	var ids: Array = []
-	if value is Array:
-		for item in value:
-			var parsed = _connector_id_from_value(item)
-			if parsed >= 0 and not ids.has(parsed):
-				ids.append(parsed)
-	else:
-		var parsed = _connector_id_from_value(value)
-		if parsed >= 0:
-			ids.append(parsed)
-	return ids
+func _editor_config_path(base_dir: String = _dir_path) -> String:
+	return base_dir + "/" + _EDITOR_CONFIG_NAME
 
 
-func _connector_id_from_value(value) -> int:
-	if value is int:
-		return value
-	if value is float:
-		return int(value)
-	if value is String and not (value as String).is_empty():
-		return (value as String).to_int()
-	return -1
+func _runtime_config_path(base_dir: String = _dir_path) -> String:
+	return base_dir + "/" + _RUNTIME_CONFIG_NAME
 
 
-func _format_connector_ids(ids: Array):
-	var unique_ids: Array = []
-	for id in ids:
-		if id >= 0 and not unique_ids.has(id):
-			unique_ids.append(id)
-	if unique_ids.is_empty():
-		return -1
-	if unique_ids.size() == 1:
-		return unique_ids[0]
-	return unique_ids
+func _read_editor_atlas(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var file = FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return {}
+	var json = JSON.parse_string(file.get_as_text())
+	if not json is Dictionary:
+		return {}
+	if json.has("atlas") and json["atlas"] is Dictionary:
+		return (json["atlas"] as Dictionary).duplicate(true)
+	return {}
+
+
+func _save_editor_json() -> void:
+	var tiles := {}
+	var names = _tile_data.keys()
+	names.sort()
+	for tile_name in names:
+		var data: Dictionary = _tile_data[tile_name]
+		var entry: Dictionary = {
+			"connectors": _duplicate_tags_per_side(data.get("connectors", [[], [], [], []])),
+			"weight": data.get("weight", 1.0),
+		}
+		if data.has("rotate"):
+			entry["rotate"] = (data["rotate"] as Array).duplicate()
+		tiles[tile_name] = entry
+
+	var out: Dictionary = {
+		"version": 1,
+		"tiles": tiles,
+	}
+	if not _atlas_info.is_empty():
+		out["atlas"] = _atlas_info.duplicate(true)
+	var file = FileAccess.open(_editor_config_path(), FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(out, "\t"))
+		file.close()
+
+
+func _save_runtime_modules_json() -> void:
+	var out: Dictionary = {
+		"version": 1,
+		"modules": _build_runtime_modules(),
+	}
+	if not _atlas_info.is_empty():
+		out["atlas"] = _atlas_info.duplicate(true)
+	var file = FileAccess.open(_runtime_config_path(), FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(out, "\t"))
+		file.close()
+
+
+func _build_runtime_modules() -> Array:
+	var modules: Array = []
+	var names = _tile_data.keys()
+	names.sort()
+	for tile_name in names:
+		var data: Dictionary = _tile_data[tile_name]
+		var rotations: Array = [0]
+		for rot in _get_rotations(tile_name):
+			rotations.append(rot)
+		var has_variants = rotations.size() > 1
+		for rot in rotations:
+			modules.append(_build_runtime_module_entry(tile_name, data, rot, has_variants))
+	return modules
+
+
+func _build_runtime_module_entry(tile_name: String, data: Dictionary, rotation: int, has_variants: bool) -> Dictionary:
+	var entry: Dictionary = {
+		"name": _runtime_module_name(tile_name, rotation, has_variants),
+		"weight": data.get("weight", 1.0),
+		"edges": _build_runtime_edges(data.get("connectors", [[], [], [], []]), rotation),
+	}
+	return entry
+
+
+func _runtime_module_name(tile_name: String, rotation: int, has_variants: bool) -> String:
+	return tile_name + "_" + str(rotation) if has_variants else tile_name
+
+
+func _build_runtime_edges(tags_per_side: Array, rotation: int) -> Dictionary:
+	var edges: Dictionary = {}
+	for dir_idx in range(_DIRECTIONS.size()):
+		var src_idx = posmod(dir_idx - rotation, 4)
+		var tags: Array = tags_per_side[src_idx] if src_idx < tags_per_side.size() else []
+		var left_ids: Array = []
+		var right_ids: Array = []
+		for tag in tags:
+			var tag_text = tag as String
+			if tag_text.begins_with("L"):
+				var id = tag_text.substr(1).to_int()
+				if id >= 0 and not left_ids.has(id):
+					left_ids.append(id)
+			elif tag_text.begins_with("R"):
+				var id = tag_text.substr(1).to_int()
+				if id >= 0 and not right_ids.has(id):
+					right_ids.append(id)
+		edges[_DIRECTIONS[dir_idx]] = {
+			"left": left_ids,
+			"right": right_ids,
+		}
+	return edges
+
+
+func _duplicate_tags_per_side(tags_per_side: Array) -> Array:
+	var out: Array = []
+	out.resize(4)
+	for i in range(4):
+		var side: Array = []
+		if i < tags_per_side.size() and tags_per_side[i] is Array:
+			for tag in tags_per_side[i]:
+				var tag_text = tag as String
+				if not tag_text.is_empty() and not side.has(tag_text):
+					side.append(tag_text)
+		out[i] = side
+	return out
+
+
+func _parse_editor_connectors(value) -> Array:
+	var out: Array = []
+	out.resize(4)
+	for i in range(4):
+		var side: Array = []
+		if value is Array and i < value.size() and value[i] is Array:
+			for tag in value[i]:
+				var tag_text = tag as String
+				if (tag_text.begins_with("L") or tag_text.begins_with("R")) and not side.has(tag_text):
+					side.append(tag_text)
+		out[i] = side
+	return out
 
 
 func _load_prefs() -> void:

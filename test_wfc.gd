@@ -142,7 +142,7 @@ func _test_preview_image() -> void:
 func _test_config_loader() -> void:
 	print("--- Test: Config Loader (strict sample) ---")
 
-	var mod_set = WFCConfigLoader.load_module_set("res://assets/test/strict_modules.json")
+	var mod_set = WFCConfigLoader.load_module_set("res://assets/test/modules.json")
 	assert(mod_set != null, "Module set should not be null")
 	assert(mod_set.modules.size() > 0, "Module set should have modules")
 	assert(mod_set.modules.size() == 4, "Rotation variants should be expanded")

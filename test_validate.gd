@@ -4,7 +4,7 @@ func _ready() -> void:
 	print("=== Validation Test ===")
 
 	# Test strict-mode sample config
-	var ms = WFCConfigLoader.load_module_set("res://assets/test/strict_modules.json")
+	var ms = WFCConfigLoader.load_module_set("res://assets/test/modules.json")
 	if ms == null:
 		print("Failed to load strict sample modules.json")
 		return

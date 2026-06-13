@@ -27,116 +27,43 @@ static func load_module_set(json_path: String) -> WFCModuleSet:
 	for entry in modules_data:
 		if not entry is Dictionary:
 			continue
-		var modules = _parse_module_entry(entry)
-		for m in modules:
-			all_modules.append(m)
+		var module = _parse_module_entry(entry)
+		if module:
+			all_modules.append(module)
 
 	module_set.modules = all_modules
 	return module_set
 
-static func _parse_module_entry(entry: Dictionary) -> Array[WFCModule]:
+static func _parse_module_entry(entry: Dictionary) -> WFCModule:
 	var name: String = entry.get("name", "")
+	if name.is_empty():
+		return null
 	var weight: float = entry.get("weight", 1.0)
-	var rotate_raw = entry.get("rotate", null)
 	var color: Color = _parse_color(entry.get("color", ""), name)
-	var texture_path: String = entry.get("texture", "")
-	if texture_path.is_empty():
-		texture_path = name + ".png"
-
-	var cl_data = entry.get("cl")
-	var base_cl: Array = _parse_connector_sides(cl_data) if cl_data is Array else []
-	var cr_data = entry.get("cr")
-	var base_cr: Array = _parse_connector_sides(cr_data) if cr_data is Array else []
-
-	var rotations: Array = []
-	if rotate_raw is Array:
-		rotations = rotate_raw.duplicate()
-
-	var has_rotations = not rotations.is_empty()
-	var out: Array[WFCModule] = []
-
-	# Rotation 0 always exists
-	var mod0 = _make_module(name, 0, has_rotations, weight, color, base_cl, base_cr)
-	out.append(mod0)
-	for r in rotations:
-		var mod = _make_module(name, r, true, weight, color, base_cl, base_cr)
-		out.append(mod)
-	return out
+	var edges_data = entry.get("edges", {})
+	if not edges_data is Dictionary:
+		push_error("WFCConfigLoader: Missing edges for module: ", name)
+		return null
+	return _make_module(name, weight, color, edges_data)
 
 
-static func _make_module(name: String, rot: int, has_rotations: bool, weight: float, color: Color, base_cl: Array, base_cr: Array) -> WFCModule:
+static func _make_module(name: String, weight: float, color: Color, edges_data: Dictionary) -> WFCModule:
 	var mod = WFCModule.new()
-	mod.module_name = name + "_" + str(rot) if has_rotations else name
+	mod.module_name = name
 	mod.weight = weight
 	mod.preview_color = color
 
 	var cl_dict: Dictionary = {}
 	var cr_dict: Dictionary = {}
-	for d in range(4):
-		var src_idx = posmod(d - rot, 4)
-		if base_cl.size() == 4:
-			cl_dict[_DIRECTIONS[d]] = (base_cl[src_idx] as Array).duplicate()
-		if base_cr.size() == 4:
-			cr_dict[_DIRECTIONS[d]] = (base_cr[src_idx] as Array).duplicate()
+	for dir in _DIRECTIONS:
+		var edge = edges_data.get(dir, {})
+		if not edge is Dictionary:
+			edge = {}
+		cl_dict[dir] = _parse_connector_ids((edge as Dictionary).get("left", []))
+		cr_dict[dir] = _parse_connector_ids((edge as Dictionary).get("right", []))
 	mod.connect_id_l = cl_dict
 	mod.connect_id_r = cr_dict
 	return mod
-
-
-static func _parse_connectors(data) -> Array:
-	var result: Array = []
-	result.resize(4)
-	for i in range(4):
-		result[i] = []
-
-	if data is String:
-		var tags = _split_tags(data)
-		for i in range(4):
-			result[i] = tags.duplicate()
-		return result
-
-	if not data is Array:
-		return result
-
-	if data.size() == 4:
-		var all_arrays := true
-		var all_strings := true
-		for item in data:
-			if not item is Array:
-				all_arrays = false
-			if not item is String:
-				all_strings = false
-
-		if all_arrays:
-			for i in range(4):
-				result[i] = (data[i] as Array).duplicate()
-			return result
-
-		for i in range(4):
-			var item = data[i]
-			if item is String:
-				result[i] = _split_tags(item)
-			elif item is Array:
-				result[i] = (item as Array).duplicate()
-		return result
-
-	return result
-
-static func _split_tags(s: String) -> Array:
-	var parts = s.split(",", false)
-	var out: Array = []
-	for p in parts:
-		var trimmed = p.strip_edges()
-		if not trimmed.is_empty():
-			out.append(trimmed)
-	return out
-
-static func _parse_connector_sides(data: Array) -> Array:
-	var out: Array = []
-	out.resize(data.size())
-	for i in range(data.size()):
-		out[i] = _parse_connector_ids(data[i])
-	return out
 
 
 static func _parse_connector_ids(value) -> Array:

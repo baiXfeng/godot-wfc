@@ -8,7 +8,7 @@ extends Node2D
 @export var rng_seed: int = -1
 @export var periodic: bool = false
 @export var cell_pixels: int = 48
-@export var config_path: String = "res://assets/test/strict_modules.json"
+@export var config_path: String = "res://assets/test/modules.json"
 
 var _texture_dir: String = ""
 var _atlas_image: Image = null
