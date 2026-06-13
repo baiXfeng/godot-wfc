@@ -44,9 +44,9 @@ static func _parse_module_entry(entry: Dictionary) -> Array[WFCModule]:
 		texture_path = name + ".png"
 
 	var cl_data = entry.get("cl")
-	var base_cl: Array = _parse_int_array(cl_data) if cl_data is Array else []
+	var base_cl: Array = _parse_connector_sides(cl_data) if cl_data is Array else []
 	var cr_data = entry.get("cr")
-	var base_cr: Array = _parse_int_array(cr_data) if cr_data is Array else []
+	var base_cr: Array = _parse_connector_sides(cr_data) if cr_data is Array else []
 
 	var rotations: Array = []
 	if rotate_raw is Array:
@@ -75,9 +75,9 @@ static func _make_module(name: String, rot: int, has_rotations: bool, weight: fl
 	for d in range(4):
 		var src_idx = posmod(d - rot, 4)
 		if base_cl.size() == 4:
-			cl_dict[_DIRECTIONS[d]] = base_cl[src_idx]
+			cl_dict[_DIRECTIONS[d]] = (base_cl[src_idx] as Array).duplicate()
 		if base_cr.size() == 4:
-			cr_dict[_DIRECTIONS[d]] = base_cr[src_idx]
+			cr_dict[_DIRECTIONS[d]] = (base_cr[src_idx] as Array).duplicate()
 	mod.connect_id_l = cl_dict
 	mod.connect_id_r = cr_dict
 	return mod
@@ -131,19 +131,36 @@ static func _split_tags(s: String) -> Array:
 			out.append(trimmed)
 	return out
 
-static func _parse_int_array(data: Array) -> Array:
+static func _parse_connector_sides(data: Array) -> Array:
 	var out: Array = []
 	out.resize(data.size())
 	for i in range(data.size()):
-		if data[i] is int:
-			out[i] = data[i]
-		elif data[i] is float:
-			out[i] = int(data[i])
-		elif data[i] is String and not (data[i] as String).is_empty():
-			out[i] = (data[i] as String).to_int()
-		else:
-			out[i] = -1
+		out[i] = _parse_connector_ids(data[i])
 	return out
+
+
+static func _parse_connector_ids(value) -> Array:
+	var out: Array = []
+	if value is Array:
+		for item in value:
+			var parsed = _connector_id_from_value(item)
+			if parsed >= 0 and not out.has(parsed):
+				out.append(parsed)
+	else:
+		var parsed = _connector_id_from_value(value)
+		if parsed >= 0:
+			out.append(parsed)
+	return out
+
+
+static func _connector_id_from_value(value) -> int:
+	if value is int:
+		return value
+	if value is float:
+		return int(value)
+	if value is String and not (value as String).is_empty():
+		return (value as String).to_int()
+	return -1
 
 static func _parse_color(hex: String, name: String) -> Color:
 	if not hex.is_empty() and hex.begins_with("#"):

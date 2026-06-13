@@ -37,6 +37,10 @@ func _test_module_set_compatibility() -> void:
 	var match_b = _make_module("MatchB", [2, 2, 2, 2], [1, 1, 1, 1])
 	var single_pair_a = _make_module("SinglePairA", [1, -1, -1, -1], [-1, -1, -1, -1])
 	var single_pair_b = _make_module("SinglePairB", [-1, -1, -1, -1], [-1, -1, 1, -1])
+	var multi_pair_a = _make_module("MultiPairA", [-1, 3, -1, -1], [-1, -1, -1, -1])
+	multi_pair_a.connect_id_l["east"] = [3, 4]
+	var multi_pair_b = _make_module("MultiPairB", [-1, -1, -1, -1], [-1, -1, -1, -1])
+	multi_pair_b.connect_id_r["west"] = [4, 5]
 	var mismatch = _make_module("Mismatch", [9, 9, 9, 9], [9, 9, 9, 9])
 	var wildcard = _make_module("Wildcard", [-1, -1, -1, -1], [-1, -1, -1, -1])
 
@@ -46,15 +50,18 @@ func _test_module_set_compatibility() -> void:
 	modules_0.append(match_b)
 	modules_0.append(single_pair_a)
 	modules_0.append(single_pair_b)
+	modules_0.append(multi_pair_a)
+	modules_0.append(multi_pair_b)
 	modules_0.append(mismatch)
 	modules_0.append(wildcard)
 	mod_set.modules = modules_0
 
 	assert(mod_set.are_compatible(0, 1, "east"), "Fully matched cross-checks should be compatible")
 	assert(mod_set.are_compatible(2, 3, "north"), "A single matched cross-check should be enough for compatibility")
-	assert(not mod_set.are_compatible(0, 4, "east"), "Mismatched cross-checks should be incompatible")
-	assert(not mod_set.are_compatible(5, 5, "west"), "Default -1 values should not create implicit compatibility")
-	print("  Compatibility cache respects explicit matches and rejects implicit -1 links")
+	assert(mod_set.are_compatible(4, 5, "east"), "Array connector IDs should match on any shared explicit ID")
+	assert(not mod_set.are_compatible(0, 6, "east"), "Mismatched cross-checks should be incompatible")
+	assert(not mod_set.are_compatible(7, 7, "west"), "Default -1 values should not create implicit compatibility")
+	print("  Compatibility cache respects explicit single and multi-ID matches")
 
 func _test_basic_solve() -> void:
 	print("--- Test: Basic Solve ---")
@@ -144,12 +151,12 @@ func _test_config_loader() -> void:
 	print("  Loaded %d modules from modules.json" % mod_set.modules.size())
 	for i in range(min(5, mod_set.modules.size())):
 		var m = mod_set.modules[i]
-		print("    [%d] %s  (N:L%d/R%d E:L%d/R%d S:L%d/R%d W:L%d/R%d)" % [
+		print("    [%d] %s  (N:L%s/R%s E:L%s/R%s S:L%s/R%s W:L%s/R%s)" % [
 			i, m.module_name,
-			m.connect_id_l.get("north", -1), m.connect_id_r.get("north", -1),
-			m.connect_id_l.get("east", -1), m.connect_id_r.get("east", -1),
-			m.connect_id_l.get("south", -1), m.connect_id_r.get("south", -1),
-			m.connect_id_l.get("west", -1), m.connect_id_r.get("west", -1)
+			str(m.connect_id_l.get("north", [])), str(m.connect_id_r.get("north", [])),
+			str(m.connect_id_l.get("east", [])), str(m.connect_id_r.get("east", [])),
+			str(m.connect_id_l.get("south", [])), str(m.connect_id_r.get("south", [])),
+			str(m.connect_id_l.get("west", [])), str(m.connect_id_r.get("west", []))
 		])
 	if mod_set.modules.size() > 5:
 		print("    ... and %d more" % (mod_set.modules.size() - 5))

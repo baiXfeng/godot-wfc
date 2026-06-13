@@ -85,6 +85,7 @@ func _test_save_load_roundtrip() -> void:
 	print("--- Save/Load Roundtrip ---")
 	var panel = _make_panel_with_test_data()
 	panel._add_connection_variant("grass", "north", "water")
+	panel._add_connection_variant("grass", "north", "sand")
 	panel._add_connection_variant("grass", "east", "sand")
 	panel._add_connection_variant("water", "south", "sand")
 
@@ -101,6 +102,8 @@ func _test_save_load_roundtrip() -> void:
 
 	assert(panel2._is_connected_variant("grass", "north", "water"),
 		"Grass north -> water should survive roundtrip")
+	assert(panel2._is_connected_variant("grass", "north", "sand"),
+		"Grass north -> sand should survive roundtrip on the same side")
 	assert(panel2._is_connected_variant("grass", "east", "sand"),
 		"Grass east -> sand should survive roundtrip")
 	assert(panel2._is_connected_variant("water", "south", "sand"),

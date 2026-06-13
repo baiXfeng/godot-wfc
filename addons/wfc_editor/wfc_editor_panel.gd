@@ -260,8 +260,10 @@ func _load_modules_json(path: String) -> void:
 			tags.resize(4)
 			for i in range(4):
 				var side_tags: Array = []
-				if cl[i] >= 0: side_tags.append("L%d" % cl[i])
-				if cr[i] >= 0: side_tags.append("R%d" % cr[i])
+				for id in _parse_connector_ids(cl[i]):
+					side_tags.append("L%d" % id)
+				for id in _parse_connector_ids(cr[i]):
+					side_tags.append("R%d" % id)
 				tags[i] = side_tags
 			_tile_data[name]["connectors"] = tags
 
@@ -522,14 +524,18 @@ func _on_save_pressed() -> void:
 	for tile_name in _tile_data:
 		var data = _tile_data[tile_name]
 		var tags_per_side = data.get("connectors", [[],[],[],[]])
-		var cl = [-1, -1, -1, -1]
-		var cr = [-1, -1, -1, -1]
+		var cl: Array = []
+		var cr: Array = []
 		for i in range(4):
+			var cl_ids: Array = []
+			var cr_ids: Array = []
 			for tag in tags_per_side[i]:
 				if tag.begins_with("L"):
-					cl[i] = tag.substr(1).to_int()
+					cl_ids.append(tag.substr(1).to_int())
 				elif tag.begins_with("R"):
-					cr[i] = tag.substr(1).to_int()
+					cr_ids.append(tag.substr(1).to_int())
+			cl.append(_format_connector_ids(cl_ids))
+			cr.append(_format_connector_ids(cr_ids))
 
 		var entry = {"name": tile_name, "cl": cl, "cr": cr}
 		if data.has("weight"): entry["weight"] = data["weight"]
@@ -543,6 +549,42 @@ func _on_save_pressed() -> void:
 	if file: file.store_string(JSON.stringify(out, "\t")); file.close()
 	_dirty = false
 	_update_save_button()
+
+
+func _parse_connector_ids(value) -> Array:
+	var ids: Array = []
+	if value is Array:
+		for item in value:
+			var parsed = _connector_id_from_value(item)
+			if parsed >= 0 and not ids.has(parsed):
+				ids.append(parsed)
+	else:
+		var parsed = _connector_id_from_value(value)
+		if parsed >= 0:
+			ids.append(parsed)
+	return ids
+
+
+func _connector_id_from_value(value) -> int:
+	if value is int:
+		return value
+	if value is float:
+		return int(value)
+	if value is String and not (value as String).is_empty():
+		return (value as String).to_int()
+	return -1
+
+
+func _format_connector_ids(ids: Array):
+	var unique_ids: Array = []
+	for id in ids:
+		if id >= 0 and not unique_ids.has(id):
+			unique_ids.append(id)
+	if unique_ids.is_empty():
+		return -1
+	if unique_ids.size() == 1:
+		return unique_ids[0]
+	return unique_ids
 
 
 func _load_prefs() -> void:

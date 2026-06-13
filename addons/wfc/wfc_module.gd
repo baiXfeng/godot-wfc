@@ -18,6 +18,6 @@ extends Resource
 @export var scene: PackedScene
 
 # Non-exported — set by WFCConfigLoader when importing from connectId-based data.
-# Maps direction ("north"/"east"/"south"/"west") to int, or -1 if unused.
+# Maps direction ("north"/"east"/"south"/"west") to Array[int]. Empty means unused.
 var connect_id_l: Dictionary = {}
 var connect_id_r: Dictionary = {}

@@ -38,16 +38,47 @@ func _modules_compatible(a_idx: int, b_idx: int, direction: String) -> bool:
 	var mod_b = modules[b_idx]
 	var opp = _OPPOSITE.get(direction, "")
 
-	var a_l: int = mod_a.connect_id_l.get(direction, -1)
-	var a_r: int = mod_a.connect_id_r.get(direction, -1)
-	var b_l: int = mod_b.connect_id_l.get(opp, -1)
-	var b_r: int = mod_b.connect_id_r.get(opp, -1)
+	var a_l = mod_a.connect_id_l.get(direction, [])
+	var a_r = mod_a.connect_id_r.get(direction, [])
+	var b_l = mod_b.connect_id_l.get(opp, [])
+	var b_r = mod_b.connect_id_r.get(opp, [])
 
 	return _cross_check(a_l, b_r) or _cross_check(a_r, b_l)
 
 
-func _cross_check(a_value: int, b_value: int) -> bool:
-	return a_value >= 0 and b_value >= 0 and a_value == b_value
+func _cross_check(a_value, b_value) -> bool:
+	var a_ids = _connector_ids(a_value)
+	var b_ids = _connector_ids(b_value)
+	if a_ids.is_empty() or b_ids.is_empty():
+		return false
+	for id in a_ids:
+		if b_ids.has(id):
+			return true
+	return false
+
+
+func _connector_ids(value) -> Array:
+	var ids: Array = []
+	if value is Array:
+		for item in value:
+			var parsed = _connector_id_from_value(item)
+			if parsed >= 0 and not ids.has(parsed):
+				ids.append(parsed)
+	else:
+		var parsed = _connector_id_from_value(value)
+		if parsed >= 0:
+			ids.append(parsed)
+	return ids
+
+
+func _connector_id_from_value(value) -> int:
+	if value is int:
+		return value
+	if value is float:
+		return int(value)
+	if value is String and not (value as String).is_empty():
+		return (value as String).to_int()
+	return -1
 
 
 func are_compatible(a_idx: int, b_idx: int, direction: String) -> bool:

@@ -184,12 +184,12 @@ func _generate() -> void:
 				f.store_string("Generation failed: %dx%d, %d modules\n" % [grid_width, grid_height, module_set.modules.size()])
 				for i in range(module_set.modules.size()):
 					var m = module_set.modules[i]
-					f.store_string("  [%d] %s: N(L%d,R%d) E(L%d,R%d) S(L%d,R%d) W(L%d,R%d)\n" % [
+					f.store_string("  [%d] %s: N(L%s,R%s) E(L%s,R%s) S(L%s,R%s) W(L%s,R%s)\n" % [
 						i, m.module_name,
-						m.connect_id_l.get("north", -1), m.connect_id_r.get("north", -1),
-						m.connect_id_l.get("east", -1), m.connect_id_r.get("east", -1),
-						m.connect_id_l.get("south", -1), m.connect_id_r.get("south", -1),
-						m.connect_id_l.get("west", -1), m.connect_id_r.get("west", -1),
+						str(m.connect_id_l.get("north", [])), str(m.connect_id_r.get("north", [])),
+						str(m.connect_id_l.get("east", [])), str(m.connect_id_r.get("east", [])),
+						str(m.connect_id_l.get("south", [])), str(m.connect_id_r.get("south", [])),
+						str(m.connect_id_l.get("west", [])), str(m.connect_id_r.get("west", [])),
 					])
 				f.close()
 		return
@@ -267,10 +267,10 @@ func _validate_result() -> void:
 
 				var ma = module_set.modules[a_idx]; var mb = module_set.modules[b_idx]
 				var ok = module_set.are_compatible(a_idx, b_idx, dir)
-				var al = ma.connect_id_l.get(dir, -1); var ar = ma.connect_id_r.get(dir, -1)
-				var bl = mb.connect_id_l.get(opp[dir], -1); var br = mb.connect_id_r.get(opp[dir], -1)
+				var al = ma.connect_id_l.get(dir, []); var ar = ma.connect_id_r.get(dir, [])
+				var bl = mb.connect_id_l.get(opp[dir], []); var br = mb.connect_id_r.get(opp[dir], [])
 
-				f.store_string("  (%d,%d) %s: %s(L%d,R%d) <-> %s(L%d,R%d) %s\n" % [
+				f.store_string("  (%d,%d) %s: %s(L%s,R%s) <-> %s(L%s,R%s) %s\n" % [
 					x, y, dir, ma.module_name, al, ar, mb.module_name, bl, br,
 					"OK" if ok else "FAIL"
 				])

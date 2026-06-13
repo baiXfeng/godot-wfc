@@ -102,30 +102,37 @@ func _calc_shannon_entropy(cell_idx: int) -> float:
 
 func _run() -> WFCSolverResult:
 	_step_count = 0
-	while true:
-		var cell = _find_lowest_entropy_cell()
-		if cell < 0:
-			break
+	_last_contradiction = {}
+	return _make_result(_search())
 
-		var possible: Array = _wave[cell]
-		if possible.is_empty():
-			var xy = _idx_to_xy(cell)
-			_last_contradiction = {
-				"cell": xy,
-				"from_cell": Vector2i(-1, -1),
-				"direction": "",
-				"step": _step_count,
-			}
-			_slog("contradiction at (%d,%d) step=%d" % [xy.x, xy.y, _step_count])
-			contradiction.emit(xy.x, xy.y)
-			return _make_result(false)
 
-		_observe(cell)
+func _search() -> bool:
+	var cell = _find_lowest_entropy_cell()
+	if cell < 0:
+		return true
 
-		if not _propagate(cell):
-			return _make_result(false)
+	var possible: Array = (_wave[cell] as Array).duplicate()
+	if possible.is_empty():
+		_record_empty_cell_contradiction(cell)
+		return false
 
-	return _make_result(true)
+	var last_dead_end: Dictionary = {}
+	var branch_order = _build_branch_order(possible)
+	for chosen in branch_order:
+		var snapshot = _capture_state()
+		_collapse_to(cell, chosen as int, possible.size())
+
+		if _propagate(cell) and _search():
+			return true
+
+		last_dead_end = _last_contradiction.duplicate()
+		_restore_state(snapshot)
+
+	if not last_dead_end.is_empty():
+		_last_contradiction = last_dead_end
+	else:
+		_record_empty_cell_contradiction(cell)
+	return false
 
 func _find_lowest_entropy_cell() -> int:
 	var best_cell := -1
@@ -142,8 +149,23 @@ func _find_lowest_entropy_cell() -> int:
 
 	return best_cell
 
-func _observe(cell_idx: int) -> void:
+func _collapse_to(cell_idx: int, chosen: int, possible_count: int) -> void:
 	var possible: Array = _wave[cell_idx]
+	if not possible.has(chosen):
+		possible = possible.duplicate()
+
+	_wave[cell_idx] = [chosen]
+	_observed[cell_idx] = chosen
+	_sum_of_weights[cell_idx] = _module_set.modules[chosen].weight
+	_entropy[cell_idx] = 0.0
+
+	var xy = _idx_to_xy(cell_idx)
+	_step_count += 1
+	_slog("step=%d observe (%d,%d) module=%d (%d possible)" % [_step_count, xy.x, xy.y, chosen, possible_count])
+	cell_collapsed.emit(xy.x, xy.y, chosen)
+
+
+func _pick_weighted_candidate(possible: Array) -> int:
 	var weight_sum := 0.0
 	for mod_idx in possible:
 		weight_sum += _module_set.modules[mod_idx].weight
@@ -156,16 +178,51 @@ func _observe(cell_idx: int) -> void:
 		if r <= cumulative:
 			chosen = possible[i]
 			break
+	return chosen
 
-	_wave[cell_idx] = [chosen]
-	_observed[cell_idx] = chosen
-	_sum_of_weights[cell_idx] = _module_set.modules[chosen].weight
-	_entropy[cell_idx] = 0.0
 
+func _build_branch_order(possible: Array) -> Array:
+	var remaining = possible.duplicate()
+	var ordered: Array = []
+	while not remaining.is_empty():
+		var chosen = _pick_weighted_candidate(remaining)
+		ordered.append(chosen)
+		remaining.erase(chosen)
+	return ordered
+
+
+func _capture_state() -> Dictionary:
+	var wave_copy: Array = []
+	wave_copy.resize(_wave.size())
+	for i in range(_wave.size()):
+		wave_copy[i] = (_wave[i] as Array).duplicate()
+	return {
+		"wave": wave_copy,
+		"observed": _observed.duplicate(),
+		"sum_of_weights": _sum_of_weights.duplicate(),
+		"entropy": _entropy.duplicate(),
+		"step_count": _step_count,
+	}
+
+
+func _restore_state(snapshot: Dictionary) -> void:
+	_wave = snapshot["wave"]
+	_observed = snapshot["observed"]
+	_sum_of_weights = snapshot["sum_of_weights"]
+	_entropy = snapshot["entropy"]
+	_step_count = snapshot["step_count"]
+
+
+func _record_empty_cell_contradiction(cell_idx: int) -> void:
 	var xy = _idx_to_xy(cell_idx)
-	_step_count += 1
-	_slog("step=%d observe (%d,%d) module=%d (%d possible)" % [_step_count, xy.x, xy.y, chosen, possible.size()])
-	cell_collapsed.emit(xy.x, xy.y, chosen)
+	_last_contradiction = {
+		"cell": xy,
+		"from_cell": Vector2i(-1, -1),
+		"direction": "",
+		"step": _step_count,
+	}
+	_slog("contradiction at (%d,%d) step=%d" % [xy.x, xy.y, _step_count])
+	contradiction.emit(xy.x, xy.y)
 
 func _propagate(start_cell: int) -> bool:
 	var stack: Array = [start_cell]
