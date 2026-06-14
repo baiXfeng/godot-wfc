@@ -1,6 +1,12 @@
 class_name WFCStepSolver
 extends RefCounted
 
+signal generation_started()
+signal cell_collapsed(x: int, y: int, module_index: int)
+signal propagation_finished(affected_count: int)
+signal generation_finished(result: WFCSolverResult)
+signal contradiction(x: int, y: int)
+
 const STATUS_RUNNING := "running"
 const STATUS_SUCCESS := "success"
 const STATUS_FAILED := "failed"
@@ -44,6 +50,7 @@ func init(p_module_set: WFCModuleSet, p_width: int, p_height: int, p_periodic: b
 	_decisions.clear()
 	_step_count = 0
 	_initialize_wave()
+	generation_started.emit()
 
 
 func step() -> Dictionary:
@@ -55,6 +62,7 @@ func step() -> Dictionary:
 		if cell < 0:
 			_done = true
 			_success = true
+			generation_finished.emit(get_result())
 			return _make_step_result("completed")
 
 		var possible: Array = (_wave[cell] as Array).duplicate()
@@ -63,6 +71,7 @@ func step() -> Dictionary:
 			if not _try_next_branch():
 				_done = true
 				_success = false
+				generation_finished.emit(get_result())
 				return _make_step_result("failed")
 			return _make_step_result("backtracked")
 
@@ -78,6 +87,7 @@ func step() -> Dictionary:
 
 		_done = true
 		_success = false
+		generation_finished.emit(get_result())
 		return _make_step_result("failed")
 
 	return _make_step_result("idle")
@@ -91,6 +101,7 @@ func finish(max_steps: int = 100000) -> WFCSolverResult:
 	if guard >= max_steps and not _done:
 		_done = true
 		_success = false
+		generation_finished.emit(get_result())
 	return get_result()
 
 
@@ -225,6 +236,8 @@ func _collapse_to(cell_idx: int, chosen: int, possible_count: int) -> void:
 	_sum_of_weights[cell_idx] = _module_set.modules[chosen].weight
 	_entropy[cell_idx] = 0.0
 	_step_count += 1
+	var xy = _idx_to_xy(cell_idx)
+	cell_collapsed.emit(xy.x, xy.y, chosen)
 
 
 func _pick_weighted_candidate(possible: Array) -> int:
@@ -277,6 +290,7 @@ func _restore_state(snapshot: Dictionary) -> void:
 
 func _propagate(start_cell: int) -> bool:
 	var stack: Array = [start_cell]
+	var affected := 0
 	while not stack.is_empty():
 		var cell = stack.pop_back()
 		var xy = _idx_to_xy(cell)
@@ -308,6 +322,7 @@ func _propagate(start_cell: int) -> bool:
 					new_wave.append(neighbor_module)
 
 			if new_wave.size() < old_count:
+				affected += 1
 				_wave[neighbor_idx] = new_wave
 				if new_wave.is_empty():
 					_last_contradiction = {
@@ -318,6 +333,7 @@ func _propagate(start_cell: int) -> bool:
 						"from_collapsed": _observed[cell],
 						"step": _step_count,
 					}
+					contradiction.emit(nx, ny)
 					return false
 
 				var sum_w := 0.0
@@ -326,6 +342,7 @@ func _propagate(start_cell: int) -> bool:
 				_sum_of_weights[neighbor_idx] = sum_w
 				_entropy[neighbor_idx] = _calc_shannon_entropy(neighbor_idx)
 				stack.append(neighbor_idx)
+	propagation_finished.emit(affected)
 	return true
 
 
@@ -336,6 +353,8 @@ func _record_empty_cell_contradiction(cell_idx: int) -> void:
 		"direction": "",
 		"step": _step_count,
 	}
+	var xy = _idx_to_xy(cell_idx)
+	contradiction.emit(xy.x, xy.y)
 
 
 func _make_step_result(action: String) -> Dictionary:
