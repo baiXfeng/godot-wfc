@@ -11,15 +11,17 @@ var _module_set: WFCModuleSet
 var _width: int
 var _height: int
 var _periodic: bool
+var _constraints: WFCConstraints
 var _step_solver: WFCStepSolver
 var _last_contradiction: Dictionary = {}
 
 
-func init(p_module_set: WFCModuleSet, p_width: int, p_height: int, p_periodic: bool = false) -> void:
+func init(p_module_set: WFCModuleSet, p_width: int, p_height: int, p_periodic: bool = false, constraints: WFCConstraints = null) -> void:
 	_module_set = p_module_set
 	_width = max(1, p_width)
 	_height = max(1, p_height)
 	_periodic = p_periodic
+	_constraints = constraints.duplicate_deep() if constraints else null
 
 
 func solve(seed: int = -1) -> WFCSolverResult:
@@ -32,7 +34,7 @@ func solve(seed: int = -1) -> WFCSolverResult:
 	_step_solver.propagation_finished.connect(func(affected_count: int): propagation_finished.emit(affected_count))
 	_step_solver.contradiction.connect(func(x: int, y: int): contradiction.emit(x, y))
 	_step_solver.generation_finished.connect(func(result: WFCSolverResult): generation_finished.emit(result))
-	_step_solver.init(_module_set, _width, _height, _periodic, seed)
+	_step_solver.init(_module_set, _width, _height, _periodic, seed, _constraints)
 	var result = _step_solver.finish()
 	_last_contradiction = _step_solver.get_last_contradiction()
 	return result

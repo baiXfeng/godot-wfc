@@ -39,18 +39,20 @@ static func _parse_module_entry(entry: Dictionary) -> WFCModule:
 	if name.is_empty():
 		return null
 	var weight: float = entry.get("weight", 1.0)
+	var groups: PackedStringArray = _parse_groups(entry.get("groups", []))
 	var color: Color = _parse_color(entry.get("color", ""), name)
 	var edges_data = entry.get("edges", {})
 	if not edges_data is Dictionary:
 		push_error("WFCConfigLoader: Missing edges for module: ", name)
 		return null
-	return _make_module(name, weight, color, edges_data)
+	return _make_module(name, weight, groups, color, edges_data)
 
 
-static func _make_module(name: String, weight: float, color: Color, edges_data: Dictionary) -> WFCModule:
+static func _make_module(name: String, weight: float, groups: PackedStringArray, color: Color, edges_data: Dictionary) -> WFCModule:
 	var mod = WFCModule.new()
 	mod.module_name = name
 	mod.weight = weight
+	mod.groups = groups
 	mod.preview_color = color
 
 	var cl_dict: Dictionary = {}
@@ -64,6 +66,16 @@ static func _make_module(name: String, weight: float, color: Color, edges_data: 
 	mod.connect_id_l = cl_dict
 	mod.connect_id_r = cr_dict
 	return mod
+
+
+static func _parse_groups(value) -> PackedStringArray:
+	var groups := PackedStringArray()
+	if value is Array:
+		for item in value:
+			var group_name = str(item)
+			if not group_name.is_empty() and not groups.has(group_name):
+				groups.append(group_name)
+	return groups
 
 
 static func _parse_connector_ids(value) -> Array:

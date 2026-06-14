@@ -7,6 +7,7 @@ extends Node2D
 @export var rng_seed: int = -1
 @export var periodic: bool = false
 @export var cell_pixels: int = 48
+@export var constraints_path: String = ""
 
 var _module_set: WFCModuleSet
 var _solver: WFCStepSolver
@@ -143,8 +144,11 @@ func _reset_demo() -> void:
 	_load_atlas_if_present()
 	_build_tile_set()
 
+	var constraints: WFCConstraints = null
+	if not constraints_path.is_empty():
+		constraints = WFCConstraintLoader.load_constraints(constraints_path)
 	_solver = WFCStepSolver.new()
-	_solver.init(_module_set, grid_width, grid_height, periodic, rng_seed)
+	_solver.init(_module_set, grid_width, grid_height, periodic, rng_seed, constraints)
 	_stop_auto_play()
 	_refresh_map()
 	_update_status("已复位")

@@ -1,0 +1,14 @@
+{
+	"version": 1,
+	"width": 6,
+	"height": 6,
+	"fixed_tiles": [
+		{ "x": 0, "y": 0, "tile": "1_2" }
+	],
+	"allowed_groups": [
+		{ "x": 1, "y": 0, "groups": ["variant_1"] }
+	],
+	"blocked_groups": [
+		{ "x": 2, "y": 0, "groups": ["variant_0", "variant_1", "variant_2"] }
+	]
+}

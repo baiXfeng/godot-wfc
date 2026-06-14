@@ -8,6 +8,7 @@ func _ready() -> void:
 	_test_module_set_compatibility()
 	_test_basic_solve()
 	_test_step_solver()
+	_test_constraints()
 	_test_contradiction()
 	_test_preview_image()
 	_test_config_loader()
@@ -138,6 +139,23 @@ func _test_step_solver() -> void:
 	assert(result.success, "Finish should continue from partial progress to a valid result")
 	assert(result.validate().is_empty(), "Step solver finished grid should satisfy adjacency constraints")
 	print("  Step solver supports partial progress and finish from current state")
+
+
+func _test_constraints() -> void:
+	print("--- Test: Constraints ---")
+	var mod_set = WFCConfigLoader.load_module_set("res://assets/test/modules.json")
+	var constraints = WFCConstraintLoader.load_constraints("res://assets/test/constraints.json")
+	assert(mod_set != null, "Constraint test module set should load")
+	assert(constraints != null, "Constraint file should load")
+
+	var solver = WFCStepSolver.new()
+	solver.init(mod_set, 6, 6, false, 7, constraints)
+	var result = solver.finish()
+	assert(result.success, "Constraint-guided solve should succeed")
+	assert(result.get_module_resource_at(0, 0).module_name == "1_2", "fixed tile constraint should be applied")
+	assert(result.get_module_resource_at(1, 0).groups.has("variant_1"), "allowed group constraint should be applied")
+	assert(result.get_module_resource_at(2, 0).groups.has("variant_3"), "blocked groups should remove forbidden variants")
+	print("  Fixed tile, allowed groups and blocked groups all affect candidate selection")
 
 func _test_contradiction() -> void:
 	print("--- Test: Contradiction Detection ---")

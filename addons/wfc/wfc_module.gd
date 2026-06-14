@@ -6,6 +6,8 @@ extends Resource
 
 @export var weight: float = 1.0
 
+@export var groups: PackedStringArray = PackedStringArray()
+
 @export var connectors: Dictionary = {
 	"north": [],
 	"east":  [],

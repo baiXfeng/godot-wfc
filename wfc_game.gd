@@ -9,6 +9,7 @@ extends Node2D
 @export var periodic: bool = false
 @export var cell_pixels: int = 48
 @export var config_path: String = "res://assets/test/modules.json"
+@export var constraints_path: String = ""
 
 var _texture_dir: String = ""
 var _atlas_image: Image = null
@@ -174,7 +175,10 @@ func _load_image(path: String) -> Image:
 
 func _generate() -> void:
 	var solver = WFCSolver.new()
-	solver.init(module_set, grid_width, grid_height, periodic)
+	var constraints: WFCConstraints = null
+	if not constraints_path.is_empty():
+		constraints = WFCConstraintLoader.load_constraints(constraints_path)
+	solver.init(module_set, grid_width, grid_height, periodic, constraints)
 	_result = solver.solve(rng_seed)
 	if not _result.success:
 		push_warning("WFCGame: Generation failed")

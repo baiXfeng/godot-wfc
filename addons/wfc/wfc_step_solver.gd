@@ -33,9 +33,13 @@ var _success: bool = false
 var _last_contradiction: Dictionary = {}
 var _last_action: String = ""
 var _backtrack_count: int = 0
+var _constraints: WFCConstraints
+var _constraint_failure: Dictionary = {}
+var _module_name_to_index: Dictionary = {}
+var _group_to_indices: Dictionary = {}
 
 
-func init(p_module_set: WFCModuleSet, p_width: int, p_height: int, p_periodic: bool = false, seed: int = -1) -> void:
+func init(p_module_set: WFCModuleSet, p_width: int, p_height: int, p_periodic: bool = false, seed: int = -1, constraints: WFCConstraints = null) -> void:
 	_module_set = p_module_set
 	_width = max(1, p_width)
 	_height = max(1, p_height)
@@ -51,9 +55,21 @@ func init(p_module_set: WFCModuleSet, p_width: int, p_height: int, p_periodic: b
 	_last_contradiction = {}
 	_last_action = "reset"
 	_backtrack_count = 0
+	_constraints = constraints.duplicate_deep() if constraints else null
+	_constraint_failure = {}
+	_rebuild_module_indices()
 	_decisions.clear()
 	_step_count = 0
+	if _constraints:
+		if _constraints.width > 0:
+			_width = _constraints.width
+		if _constraints.height > 0:
+			_height = _constraints.height
 	_initialize_wave()
+	if _constraints and not _apply_constraints():
+		_done = true
+		_success = false
+		_last_action = "constraint_failed"
 	generation_started.emit()
 
 
@@ -174,6 +190,10 @@ func get_last_contradiction() -> Dictionary:
 	return _last_contradiction.duplicate(true)
 
 
+func get_constraint_failure() -> Dictionary:
+	return _constraint_failure.duplicate(true)
+
+
 func get_last_action() -> String:
 	return _last_action
 
@@ -209,6 +229,119 @@ func _initialize_wave() -> void:
 		_wave[i] = all_modules.duplicate()
 		_sum_of_weights[i] = total_weight
 		_entropy[i] = _calc_shannon_entropy(i)
+
+
+func _rebuild_module_indices() -> void:
+	_module_name_to_index.clear()
+	_group_to_indices.clear()
+	if _module_set == null:
+		return
+	for i in range(_module_set.modules.size()):
+		var module = _module_set.modules[i]
+		_module_name_to_index[module.module_name] = i
+		for group_name in module.groups:
+			if not _group_to_indices.has(group_name):
+				_group_to_indices[group_name] = []
+			(_group_to_indices[group_name] as Array).append(i)
+
+
+func _apply_constraints() -> bool:
+	for entry in _constraints.fixed_tiles:
+		if not _apply_fixed_tile(entry):
+			return false
+	for entry in _constraints.allowed_groups:
+		if not _apply_allowed_groups(entry):
+			return false
+	for entry in _constraints.blocked_groups:
+		if not _apply_blocked_groups(entry):
+			return false
+	return true
+
+
+func _apply_fixed_tile(entry: Dictionary) -> bool:
+	var idx = _constraint_index(entry)
+	if idx < 0:
+		return true
+	var tile_name = str(entry.get("tile", ""))
+	if tile_name.is_empty() or not _module_name_to_index.has(tile_name):
+		_constraint_failure = {
+			"cell": Vector2i(entry.get("x", -1), entry.get("y", -1)),
+			"reason": "unknown_fixed_tile",
+			"fixed_tile": tile_name,
+		}
+		return false
+	return _restrict_to_indices(idx, [_module_name_to_index[tile_name]], "fixed_tile", entry)
+
+
+func _apply_allowed_groups(entry: Dictionary) -> bool:
+	var idx = _constraint_index(entry)
+	if idx < 0:
+		return true
+	var allowed_indices: Array = []
+	for group_name in entry.get("groups", PackedStringArray()):
+		for module_idx in _group_to_indices.get(group_name, []):
+			if not allowed_indices.has(module_idx):
+				allowed_indices.append(module_idx)
+	return _restrict_to_indices(idx, allowed_indices, "allowed_groups", entry)
+
+
+func _apply_blocked_groups(entry: Dictionary) -> bool:
+	var idx = _constraint_index(entry)
+	if idx < 0:
+		return true
+	var blocked_indices: Array = []
+	for group_name in entry.get("groups", PackedStringArray()):
+		for module_idx in _group_to_indices.get(group_name, []):
+			if not blocked_indices.has(module_idx):
+				blocked_indices.append(module_idx)
+	var current: Array = (_wave[idx] as Array).duplicate()
+	var remaining: Array = []
+	for module_idx in current:
+		if not blocked_indices.has(module_idx):
+			remaining.append(module_idx)
+	return _set_wave_candidates(idx, remaining, "blocked_groups", entry)
+
+
+func _restrict_to_indices(cell_idx: int, allowed_indices: Array, reason: String, entry: Dictionary) -> bool:
+	var current: Array = (_wave[cell_idx] as Array).duplicate()
+	var remaining: Array = []
+	for module_idx in current:
+		if allowed_indices.has(module_idx):
+			remaining.append(module_idx)
+	return _set_wave_candidates(cell_idx, remaining, reason, entry)
+
+
+func _set_wave_candidates(cell_idx: int, candidates: Array, reason: String, entry: Dictionary) -> bool:
+	_wave[cell_idx] = candidates
+	var sum_w := 0.0
+	for module_idx in candidates:
+		sum_w += _module_set.modules[module_idx].weight
+	_sum_of_weights[cell_idx] = sum_w
+	_entropy[cell_idx] = _calc_shannon_entropy(cell_idx) if not candidates.is_empty() else INF
+	if candidates.is_empty():
+		_constraint_failure = {
+			"cell": Vector2i(entry.get("x", -1), entry.get("y", -1)),
+			"reason": reason,
+			"fixed_tile": str(entry.get("tile", "")),
+			"groups": entry.get("groups", PackedStringArray()),
+			"remaining_candidates": [],
+		}
+		_last_contradiction = {
+			"cell": Vector2i(entry.get("x", -1), entry.get("y", -1)),
+			"from_cell": Vector2i(-1, -1),
+			"direction": "constraint",
+			"step": _step_count,
+		}
+		return false
+	return true
+
+
+func _constraint_index(entry: Dictionary) -> int:
+	var x = entry.get("x", -1) as int
+	var y = entry.get("y", -1) as int
+	if x < 0 or x >= _width or y < 0 or y >= _height:
+		return -1
+	return _xy_to_idx(x, y)
 
 
 func _calc_shannon_entropy(cell_idx: int) -> float:
