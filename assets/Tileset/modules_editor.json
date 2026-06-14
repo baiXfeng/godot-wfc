@@ -380,7 +380,7 @@
 					"R121"
 				]
 			],
-			"weight": 1.0
+			"weight": 0.5
 		},
 		"t_cave_tilesheet_3_0": {
 			"connectors": [

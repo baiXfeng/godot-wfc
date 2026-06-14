@@ -7,6 +7,7 @@ func _ready() -> void:
 	print("=== WFC Test Started ===")
 	_test_module_set_compatibility()
 	_test_basic_solve()
+	_test_step_solver()
 	_test_contradiction()
 	_test_preview_image()
 	_test_config_loader()
@@ -107,6 +108,36 @@ func _test_basic_solve() -> void:
 				assert(mod_set.are_compatible(mid, up, "north"),
 					"Incompatible at (%d,%d) north" % [x, y])
 	print("  All adjacency constraints verified.")
+
+
+func _test_step_solver() -> void:
+	print("--- Test: Step Solver ---")
+	var mod_a = _make_module("Red", [1, 1, 1, 1], [1, 1, 1, 1], Color.RED, 1.0)
+	var mod_b = _make_module("Blue", [1, 1, 1, 1], [1, 1, 1, 1], Color.BLUE, 3.0)
+
+	var mod_set = WFCModuleSet.new()
+	var modules: Array[WFCModule] = []
+	modules.append(mod_a)
+	modules.append(mod_b)
+	mod_set.modules = modules
+
+	var solver = WFCStepSolver.new()
+	solver.init(mod_set, 6, 6, false, 42)
+	var first = solver.step()
+	assert(first.status == WFCStepSolver.STATUS_RUNNING, "Step solver should still be running after first step")
+	assert(solver.get_collapsed_count() > 0, "Step solver should collapse at least one cell per visible step")
+
+	for _i in range(8):
+		if solver.is_done():
+			break
+		solver.step()
+
+	var partial = solver.get_collapsed_count()
+	assert(partial > 0, "Step solver should keep partial progress before finish")
+	var result = solver.finish()
+	assert(result.success, "Finish should continue from partial progress to a valid result")
+	assert(result.validate().is_empty(), "Step solver finished grid should satisfy adjacency constraints")
+	print("  Step solver supports partial progress and finish from current state")
 
 func _test_contradiction() -> void:
 	print("--- Test: Contradiction Detection ---")

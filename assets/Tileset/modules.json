@@ -568,7 +568,7 @@
 				}
 			},
 			"name": "t_cave_tilesheet_2_3",
-			"weight": 1.0
+			"weight": 0.5
 		},
 		{
 			"edges": {
