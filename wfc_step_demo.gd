@@ -17,7 +17,10 @@ var _height_spin: SpinBox
 var _reset_button: Button
 var _step_button: Button
 var _finish_button: Button
+var _auto_button: Button
 var _status_label: Label
+var _play_timer: Timer
+var _is_auto_running: bool = false
 
 var _texture_dir: String = ""
 var _atlas_image: Image = null
@@ -30,8 +33,27 @@ func _ready() -> void:
 	_tile_map = TileMapLayer.new()
 	add_child(_tile_map)
 	get_viewport().size_changed.connect(_center_map)
+	_play_timer = Timer.new()
+	_play_timer.wait_time = 0.05
+	_play_timer.one_shot = false
+	_play_timer.timeout.connect(_on_auto_step)
+	add_child(_play_timer)
 	_build_ui()
 	_reset_demo()
+	queue_redraw()
+
+
+func _draw() -> void:
+	if _solver == null:
+		return
+	var origin = _tile_map.position
+	for y in range(_solver.get_height()):
+		for x in range(_solver.get_width()):
+			if _solver.get_module_at(x, y) >= 0:
+				continue
+			var rect = Rect2(origin + Vector2(x * cell_pixels, y * cell_pixels), Vector2(cell_pixels, cell_pixels))
+			draw_rect(rect, Color(1, 1, 1, 0.08), true)
+			draw_rect(rect, Color(1, 1, 1, 0.18), false, 1.0)
 
 
 func _build_ui() -> void:
@@ -69,9 +91,11 @@ func _build_ui() -> void:
 	_reset_button = _make_button("复位")
 	_step_button = _make_button("下一步")
 	_finish_button = _make_button("直接完成")
+	_auto_button = _make_button("自动播放")
 	row.add_child(_reset_button)
 	row.add_child(_step_button)
 	row.add_child(_finish_button)
+	row.add_child(_auto_button)
 
 	_status_label = _make_label("")
 	_status_label.custom_minimum_size = Vector2(180, 0)
@@ -80,6 +104,7 @@ func _build_ui() -> void:
 	_reset_button.pressed.connect(_reset_demo)
 	_step_button.pressed.connect(_step_once)
 	_finish_button.pressed.connect(_finish_generation)
+	_auto_button.pressed.connect(_toggle_auto_play)
 
 
 func _make_label(text: String) -> Label:
@@ -120,6 +145,7 @@ func _reset_demo() -> void:
 
 	_solver = WFCStepSolver.new()
 	_solver.init(_module_set, grid_width, grid_height, periodic, rng_seed)
+	_stop_auto_play()
 	_refresh_map()
 	_update_status("已复位")
 
@@ -143,6 +169,33 @@ func _finish_generation() -> void:
 	_update_status("直接完成")
 
 
+func _toggle_auto_play() -> void:
+	if _solver == null or _solver.is_done():
+		return
+	if _is_auto_running:
+		_stop_auto_play()
+	else:
+		_is_auto_running = true
+		_auto_button.text = "停止播放"
+		_play_timer.start()
+
+
+func _stop_auto_play() -> void:
+	_is_auto_running = false
+	if _play_timer:
+		_play_timer.stop()
+	if _auto_button:
+		_auto_button.text = "自动播放"
+
+
+func _on_auto_step() -> void:
+	if _solver == null or _solver.is_done():
+		_stop_auto_play()
+		_update_status("自动完成")
+		return
+	_step_once()
+
+
 func _refresh_map() -> void:
 	_tile_map.clear()
 	if _solver == null:
@@ -153,6 +206,7 @@ func _refresh_map() -> void:
 			if module_idx >= 0:
 				_tile_map.set_cell(Vector2i(x, y), _tile_source_id, Vector2i(module_idx, 0))
 	_center_map()
+	queue_redraw()
 
 
 func _center_map() -> void:
@@ -172,9 +226,20 @@ func _update_status(action: String) -> void:
 	var collapsed = _solver.get_collapsed_count()
 	var total = _solver.get_width() * _solver.get_height()
 	var status = _solver.get_status()
-	_status_label.text = "%s  %d/%d  %s" % [action, collapsed, total, status]
+	var percent = int(round(_solver.get_progress_ratio() * 100.0))
+	_status_label.text = "%s  %d/%d  %d%%  回溯:%d  %s" % [
+		action,
+		collapsed,
+		total,
+		percent,
+		_solver.get_backtrack_count(),
+		status,
+	]
 	_step_button.disabled = _solver.is_done()
 	_finish_button.disabled = _solver.is_done()
+	_auto_button.disabled = _solver.is_done()
+	if _solver.is_done():
+		_stop_auto_play()
 
 
 func _build_tile_set() -> void:

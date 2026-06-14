@@ -31,6 +31,8 @@ var _step_count: int = 0
 var _done: bool = false
 var _success: bool = false
 var _last_contradiction: Dictionary = {}
+var _last_action: String = ""
+var _backtrack_count: int = 0
 
 
 func init(p_module_set: WFCModuleSet, p_width: int, p_height: int, p_periodic: bool = false, seed: int = -1) -> void:
@@ -47,6 +49,8 @@ func init(p_module_set: WFCModuleSet, p_width: int, p_height: int, p_periodic: b
 	_done = _module_count == 0
 	_success = false
 	_last_contradiction = {}
+	_last_action = "reset"
+	_backtrack_count = 0
 	_decisions.clear()
 	_step_count = 0
 	_initialize_wave()
@@ -55,6 +59,7 @@ func init(p_module_set: WFCModuleSet, p_width: int, p_height: int, p_periodic: b
 
 func step() -> Dictionary:
 	if _done:
+		_last_action = "done"
 		return _make_step_result("done")
 
 	while true:
@@ -62,6 +67,7 @@ func step() -> Dictionary:
 		if cell < 0:
 			_done = true
 			_success = true
+			_last_action = "completed"
 			generation_finished.emit(get_result())
 			return _make_step_result("completed")
 
@@ -71,8 +77,11 @@ func step() -> Dictionary:
 			if not _try_next_branch():
 				_done = true
 				_success = false
+				_last_action = "failed"
 				generation_finished.emit(get_result())
 				return _make_step_result("failed")
+			_backtrack_count += 1
+			_last_action = "backtracked"
 			return _make_step_result("backtracked")
 
 		_decisions.append({
@@ -83,13 +92,16 @@ func step() -> Dictionary:
 		})
 
 		if _try_next_branch():
+			_last_action = "collapsed"
 			return _make_step_result("collapsed")
 
 		_done = true
 		_success = false
+		_last_action = "failed"
 		generation_finished.emit(get_result())
 		return _make_step_result("failed")
 
+	_last_action = "idle"
 	return _make_step_result("idle")
 
 
@@ -101,6 +113,7 @@ func finish(max_steps: int = 100000) -> WFCSolverResult:
 	if guard >= max_steps and not _done:
 		_done = true
 		_success = false
+		_last_action = "failed"
 		generation_finished.emit(get_result())
 	return get_result()
 
@@ -159,6 +172,19 @@ func get_status() -> String:
 
 func get_last_contradiction() -> Dictionary:
 	return _last_contradiction.duplicate(true)
+
+
+func get_last_action() -> String:
+	return _last_action
+
+
+func get_backtrack_count() -> int:
+	return _backtrack_count
+
+
+func get_progress_ratio() -> float:
+	var total = max(1, _width * _height)
+	return float(get_collapsed_count()) / float(total)
 
 
 func _initialize_wave() -> void:
