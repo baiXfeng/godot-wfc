@@ -84,6 +84,14 @@ func _test_connection_logic() -> void:
 func _test_save_load_roundtrip() -> void:
 	print("--- Save/Load Roundtrip ---")
 	var panel = _make_panel_with_test_data()
+	add_child(panel)
+	panel._selected_main = "grass"
+	panel._on_group_added("ground")
+	panel._on_group_added("solid")
+	assert(panel._tile_data["grass"]["groups"].has("ground"), "Group should be added to selected tile")
+	assert(panel._tile_data["grass"]["groups"].has("solid"), "Second group should be added to selected tile")
+	panel._on_group_removed("ground")
+	assert(not panel._tile_data["grass"]["groups"].has("ground"), "Removed group should disappear from selected tile")
 	panel._add_connection_variant("grass", "north", "water")
 	panel._add_connection_variant("grass", "north", "sand")
 	panel._add_connection_variant("grass", "east", "sand")
@@ -100,10 +108,13 @@ func _test_save_load_roundtrip() -> void:
 		"runtime modules.json should be exported")
 
 	var panel2 = _make_panel_with_test_data()
+	add_child(panel2)
 	panel2._load_editor_json(temp_dir + "/modules_editor.json")
 
 	assert(panel2._is_connected_variant("grass", "north", "water"),
 		"Grass north -> water should survive roundtrip")
+	assert(panel2._tile_data["grass"]["groups"].has("solid"),
+		"Tile groups should survive editor roundtrip")
 	assert(panel2._is_connected_variant("grass", "north", "sand"),
 		"Grass north -> sand should survive roundtrip on the same side")
 	assert(panel2._is_connected_variant("grass", "east", "sand"),
@@ -118,12 +129,15 @@ func _test_save_load_roundtrip() -> void:
 		"runtime modules.json should use export format")
 	assert(runtime_json["modules"][0].has("edges"),
 		"runtime modules should contain compiled edges")
+	assert(runtime_json["modules"][0].has("groups"),
+		"runtime modules should export groups")
 	assert(not runtime_json["modules"][0].has("connectors"),
 		"runtime modules should not contain editor connectors")
 
 	DirAccess.remove_absolute(temp_dir + "/modules_editor.json")
 	DirAccess.remove_absolute(temp_dir + "/modules.json")
 	DirAccess.remove_absolute(temp_dir)
+	remove_child(panel); remove_child(panel2)
 	panel.queue_free(); panel2.queue_free()
 	print("  OK - save/load roundtrip preserves all connections")
 
@@ -132,8 +146,8 @@ func _test_grid_refresh() -> void:
 	print("--- Grid Refresh ---")
 	var panel = _make_panel_with_test_data()
 	panel._tile_data = {
-		"grass": {"texture_path": "", "color": Color.GREEN, "connectors": [[],[],[],[]]},
-		"water": {"texture_path": "", "color": Color.BLUE, "connectors": [[],[],[],[]]},
+		"grass": {"texture_path": "", "color": Color.GREEN, "connectors": [[],[],[],[]], "groups": []},
+		"water": {"texture_path": "", "color": Color.BLUE, "connectors": [[],[],[],[]], "groups": []},
 	}
 	panel._tile_textures = {}
 	add_child(panel)
@@ -168,9 +182,9 @@ func _test_grid_refresh() -> void:
 func _make_panel_with_test_data() -> Control:
 	var panel = load("res://addons/wfc_editor/wfc_editor_panel.tscn").instantiate()
 	panel._tile_data = {
-		"grass": {"texture_path": "", "color": Color.GREEN, "connectors": [[],[],[],[]]},
-		"water": {"texture_path": "", "color": Color.BLUE, "connectors": [[],[],[],[]]},
-		"sand":  {"texture_path": "", "color": Color.BEIGE, "connectors": [[],[],[],[]]},
+		"grass": {"texture_path": "", "color": Color.GREEN, "connectors": [[],[],[],[]], "groups": []},
+		"water": {"texture_path": "", "color": Color.BLUE, "connectors": [[],[],[],[]], "groups": []},
+		"sand":  {"texture_path": "", "color": Color.BEIGE, "connectors": [[],[],[],[]], "groups": []},
 	}
 	panel._tile_textures = {}
 	return panel

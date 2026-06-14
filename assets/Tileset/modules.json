@@ -54,6 +54,7 @@
 					]
 				}
 			},
+			"groups": [],
 			"name": "t_cave_tilesheet_0_0",
 			"weight": 1.0
 		},
@@ -112,6 +113,7 @@
 					]
 				}
 			},
+			"groups": [],
 			"name": "t_cave_tilesheet_0_1",
 			"weight": 0.2
 		},
@@ -164,6 +166,7 @@
 					]
 				}
 			},
+			"groups": [],
 			"name": "t_cave_tilesheet_0_2",
 			"weight": 1.0
 		},
@@ -221,6 +224,7 @@
 					]
 				}
 			},
+			"groups": [],
 			"name": "t_cave_tilesheet_0_3",
 			"weight": 1.0
 		},
@@ -266,6 +270,9 @@
 					]
 				}
 			},
+			"groups": [
+				"group"
+			],
 			"name": "t_cave_tilesheet_1_0",
 			"weight": 1.0
 		},
@@ -307,6 +314,9 @@
 					]
 				}
 			},
+			"groups": [
+				"group"
+			],
 			"name": "t_cave_tilesheet_1_1",
 			"weight": 1.0
 		},
@@ -353,6 +363,9 @@
 					]
 				}
 			},
+			"groups": [
+				"group"
+			],
 			"name": "t_cave_tilesheet_1_2",
 			"weight": 1.0
 		},
@@ -397,6 +410,7 @@
 					]
 				}
 			},
+			"groups": [],
 			"name": "t_cave_tilesheet_1_3",
 			"weight": 1.0
 		},
@@ -439,6 +453,9 @@
 					]
 				}
 			},
+			"groups": [
+				"group"
+			],
 			"name": "t_cave_tilesheet_2_0",
 			"weight": 1.0
 		},
@@ -481,6 +498,7 @@
 					]
 				}
 			},
+			"groups": [],
 			"name": "t_cave_tilesheet_2_1",
 			"weight": 0.5
 		},
@@ -523,6 +541,9 @@
 					]
 				}
 			},
+			"groups": [
+				"group"
+			],
 			"name": "t_cave_tilesheet_2_2",
 			"weight": 1.0
 		},
@@ -567,6 +588,7 @@
 					]
 				}
 			},
+			"groups": [],
 			"name": "t_cave_tilesheet_2_3",
 			"weight": 0.5
 		},
@@ -603,6 +625,9 @@
 					]
 				}
 			},
+			"groups": [
+				"group"
+			],
 			"name": "t_cave_tilesheet_3_0",
 			"weight": 1.0
 		},
@@ -647,6 +672,7 @@
 					]
 				}
 			},
+			"groups": [],
 			"name": "t_cave_tilesheet_3_1",
 			"weight": 1.0
 		},
@@ -682,6 +708,9 @@
 					]
 				}
 			},
+			"groups": [
+				"group"
+			],
 			"name": "t_cave_tilesheet_3_2",
 			"weight": 1.0
 		},
@@ -727,6 +756,7 @@
 					]
 				}
 			},
+			"groups": [],
 			"name": "t_cave_tilesheet_3_3",
 			"weight": 1.0
 		}

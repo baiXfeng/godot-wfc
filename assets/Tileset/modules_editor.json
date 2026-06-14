@@ -40,6 +40,7 @@
 					"R90"
 				]
 			],
+			"groups": [],
 			"weight": 1.0
 		},
 		"t_cave_tilesheet_0_1": {
@@ -81,6 +82,7 @@
 					"L43"
 				]
 			],
+			"groups": [],
 			"weight": 0.2
 		},
 		"t_cave_tilesheet_0_2": {
@@ -117,6 +119,7 @@
 					"R60"
 				]
 			],
+			"groups": [],
 			"weight": 1.0
 		},
 		"t_cave_tilesheet_0_3": {
@@ -158,6 +161,7 @@
 					"L76"
 				]
 			],
+			"groups": [],
 			"weight": 1.0
 		},
 		"t_cave_tilesheet_1_0": {
@@ -188,6 +192,9 @@
 					"R134"
 				]
 			],
+			"groups": [
+				"group"
+			],
 			"weight": 1.0
 		},
 		"t_cave_tilesheet_1_1": {
@@ -212,6 +219,9 @@
 					"L84",
 					"L88"
 				]
+			],
+			"groups": [
+				"group"
 			],
 			"weight": 1.0
 		},
@@ -243,6 +253,9 @@
 					"L97"
 				]
 			],
+			"groups": [
+				"group"
+			],
 			"weight": 1.0
 		},
 		"t_cave_tilesheet_1_3": {
@@ -272,6 +285,7 @@
 					"L100"
 				]
 			],
+			"groups": [],
 			"weight": 1.0
 		},
 		"t_cave_tilesheet_2_0": {
@@ -297,6 +311,9 @@
 					"L105",
 					"L108"
 				]
+			],
+			"groups": [
+				"group"
 			],
 			"weight": 1.0
 		},
@@ -325,6 +342,7 @@
 					"L115"
 				]
 			],
+			"groups": [],
 			"weight": 0.5
 		},
 		"t_cave_tilesheet_2_2": {
@@ -350,6 +368,9 @@
 					"R109",
 					"R127"
 				]
+			],
+			"groups": [
+				"group"
 			],
 			"weight": 1.0
 		},
@@ -380,6 +401,7 @@
 					"R121"
 				]
 			],
+			"groups": [],
 			"weight": 0.5
 		},
 		"t_cave_tilesheet_3_0": {
@@ -401,6 +423,9 @@
 					"R86",
 					"L126"
 				]
+			],
+			"groups": [
+				"group"
 			],
 			"weight": 1.0
 		},
@@ -430,6 +455,7 @@
 					"L131"
 				]
 			],
+			"groups": [],
 			"weight": 1.0
 		},
 		"t_cave_tilesheet_3_2": {
@@ -451,6 +477,9 @@
 					"R118",
 					"R132"
 				]
+			],
+			"groups": [
+				"group"
 			],
 			"weight": 1.0
 		},
@@ -482,6 +511,7 @@
 					"L135"
 				]
 			],
+			"groups": [],
 			"weight": 1.0
 		}
 	},

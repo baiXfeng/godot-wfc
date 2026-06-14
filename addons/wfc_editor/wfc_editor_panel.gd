@@ -64,6 +64,8 @@ func _instantiate_columns() -> void:
 	_center.slot_checked.connect(_on_slot_checked)
 	_center.rotation_toggled.connect(_on_rotation_toggled)
 	_center.weight_changed.connect(_on_weight_changed)
+	_center.group_added.connect(_on_group_added)
+	_center.group_removed.connect(_on_group_removed)
 
 
 func _connect_signals() -> void:
@@ -186,7 +188,8 @@ func _load_atlas(file_path: String, columns: int, rows: int, name_template: Stri
 			_tile_data[tile_name] = {
 				"texture_path": file_path,
 				"color": Color.WHITE,
-				"connectors": [[], [], [], []]
+				"connectors": [[], [], [], []],
+				"groups": []
 			}
 			_tile_textures[tile_name] = region_tex
 
@@ -225,7 +228,8 @@ func _load_directory(path: String) -> void:
 			_tile_data[base] = {
 				"texture_path": path + "/" + file_name,
 				"color": Color.WHITE,
-				"connectors": [[], [], [], []]
+				"connectors": [[], [], [], []],
+				"groups": []
 			}
 			var tex = load(path + "/" + file_name) as Texture2D
 			if tex: _tile_textures[base] = tex
@@ -262,6 +266,10 @@ func _load_editor_json(path: String) -> void:
 				_tile_data[name]["connectors"] = parsed
 		if data.has("weight"):
 			_tile_data[name]["weight"] = data["weight"]
+		if data.has("groups") and data["groups"] is Array:
+			_tile_data[name]["groups"] = _sanitize_group_names(data["groups"])
+		else:
+			_tile_data[name]["groups"] = []
 		if data.has("rotate") and data["rotate"] is Array:
 			_tile_data[name]["rotate"] = (data["rotate"] as Array).duplicate()
 		else:
@@ -277,6 +285,7 @@ func _refresh_tile_grids() -> void:
 	_center.clear_candidate()
 	_center.reset_slots()
 	_center.hide_rotations()
+	_center.clear_groups()
 
 
 # ------- event handling -------
@@ -291,6 +300,7 @@ func _on_main_selected(tile_name: String) -> void:
 	_center.show_rotations(rot_data)
 	var w = _tile_data.get(tile_name, {}).get("weight", 1.0)
 	_center.set_weight(w as float)
+	_center.set_groups(_tile_data.get(tile_name, {}).get("groups", []))
 	_populate_right_with_rotations()
 
 	if _get_base_name(_selected_candidate) == _selected_candidate:
@@ -366,6 +376,27 @@ func _on_weight_changed(value: float) -> void:
 	if _selected_main.is_empty(): return
 	_tile_data[_selected_main]["weight"] = value
 	_mark_dirty()
+
+
+func _on_group_added(group_name: String) -> void:
+	if _selected_main.is_empty(): return
+	var groups = _sanitize_group_names(_tile_data[_selected_main].get("groups", []))
+	if not groups.has(group_name):
+		groups.append(group_name)
+		groups.sort()
+		_tile_data[_selected_main]["groups"] = groups
+		_center.set_groups(groups)
+		_mark_dirty()
+
+
+func _on_group_removed(group_name: String) -> void:
+	if _selected_main.is_empty(): return
+	var groups = _sanitize_group_names(_tile_data[_selected_main].get("groups", []))
+	if groups.has(group_name):
+		groups.erase(group_name)
+		_tile_data[_selected_main]["groups"] = groups
+		_center.set_groups(groups)
+		_mark_dirty()
 
 
 func _refresh_right_colors() -> void:
@@ -554,6 +585,7 @@ func _save_editor_json() -> void:
 		var entry: Dictionary = {
 			"connectors": _duplicate_tags_per_side(data.get("connectors", [[], [], [], []])),
 			"weight": data.get("weight", 1.0),
+			"groups": _sanitize_group_names(data.get("groups", [])),
 		}
 		if data.has("rotate"):
 			entry["rotate"] = (data["rotate"] as Array).duplicate()
@@ -603,6 +635,7 @@ func _build_runtime_module_entry(tile_name: String, data: Dictionary, rotation: 
 	var entry: Dictionary = {
 		"name": _runtime_module_name(tile_name, rotation, has_variants),
 		"weight": data.get("weight", 1.0),
+		"groups": _sanitize_group_names(data.get("groups", [])),
 		"edges": _build_runtime_edges(data.get("connectors", [[], [], [], []]), rotation),
 	}
 	return entry
@@ -648,6 +681,17 @@ func _duplicate_tags_per_side(tags_per_side: Array) -> Array:
 					side.append(tag_text)
 		out[i] = side
 	return out
+
+
+func _sanitize_group_names(value) -> Array:
+	var groups: Array = []
+	if value is Array:
+		for item in value:
+			var name = str(item).strip_edges()
+			if not name.is_empty() and not groups.has(name):
+				groups.append(name)
+	groups.sort()
+	return groups
 
 
 func _parse_editor_connectors(value) -> Array:

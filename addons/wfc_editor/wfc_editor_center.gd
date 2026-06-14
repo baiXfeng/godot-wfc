@@ -5,6 +5,8 @@ extends CenterContainer
 signal slot_checked(dir: String, checked: bool)
 signal rotation_toggled(deg: int, enabled: bool)
 signal weight_changed(value: float)
+signal group_added(group_name: String)
+signal group_removed(group_name: String)
 
 const _SLOT_SCENE = preload("res://addons/wfc_editor/wfc_tile_slot.tscn")
 const _DIRECTIONS = ["north", "east", "south", "west"]
@@ -13,12 +15,22 @@ const DEBUG_LOG := false
 var _center_slot: WfcTileSlot
 var _slots: Dictionary = {}
 var _grid: GridContainer
+var _group_flow: FlowContainer
+var _group_edit: LineEdit
+var _group_add_button: Button
 
 
 func _ready() -> void:
 	_grid = $Inner/CrossGrid
+	_group_flow = $Inner/GroupsBox/GroupFlow
+	_group_edit = $Inner/GroupsBox/GroupRow/GroupEdit
+	_group_add_button = $Inner/GroupsBox/GroupRow/AddGroupButton
 	_build_grid()
 	_connect_rotation_signals()
+	if _group_add_button:
+		_group_add_button.pressed.connect(_on_add_group_pressed)
+	if _group_edit:
+		_group_edit.text_submitted.connect(func(_text): _on_add_group_pressed())
 	for dir in _DIRECTIONS:
 		var d = dir
 		_slots[dir].checked.connect(func(v): slot_checked.emit(d, v))
@@ -69,6 +81,43 @@ func set_weight(value: float) -> void:
 	$Inner/RotBar/WeightEdit.set_block_signals(true)
 	$Inner/RotBar/WeightEdit.value = value
 	$Inner/RotBar/WeightEdit.set_block_signals(false)
+
+
+func set_groups(groups: Array) -> void:
+	for child in _group_flow.get_children():
+		child.queue_free()
+	var unique_groups: Array = []
+	for group_name in groups:
+		var name = str(group_name).strip_edges()
+		if not name.is_empty() and not unique_groups.has(name):
+			unique_groups.append(name)
+	unique_groups.sort()
+	for group_name in unique_groups:
+		_group_flow.add_child(_make_group_chip(group_name))
+	if _group_edit:
+		_group_edit.text = ""
+
+
+func clear_groups() -> void:
+	set_groups([])
+
+
+func _make_group_chip(group_name: String) -> Button:
+	var chip = Button.new()
+	chip.text = group_name + "  x"
+	chip.focus_mode = Control.FOCUS_NONE
+	chip.pressed.connect(func(): group_removed.emit(group_name))
+	return chip
+
+
+func _on_add_group_pressed() -> void:
+	if _group_edit == null:
+		return
+	var group_name = _group_edit.text.strip_edges()
+	if group_name.is_empty():
+		return
+	group_added.emit(group_name)
+	_group_edit.text = ""
 
 
 func set_main(tile_name: String, texture: Texture2D) -> void:

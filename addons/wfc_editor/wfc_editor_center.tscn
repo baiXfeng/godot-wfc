@@ -42,3 +42,29 @@ size_flags_vertical = 4
 theme_override_constants/h_separation = 30
 theme_override_constants/v_separation = 30
 columns = 3
+
+[node name="GroupsBox" type="VBoxContainer" parent="Inner"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GroupsLabel" type="Label" parent="Inner/GroupsBox"]
+layout_mode = 2
+text = "Groups"
+
+[node name="GroupRow" type="HBoxContainer" parent="Inner/GroupsBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GroupEdit" type="LineEdit" parent="Inner/GroupsBox/GroupRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "输入 group 名称"
+
+[node name="AddGroupButton" type="Button" parent="Inner/GroupsBox/GroupRow"]
+layout_mode = 2
+text = "添加"
+
+[node name="GroupFlow" type="FlowContainer" parent="Inner/GroupsBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
